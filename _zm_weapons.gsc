@@ -17,7 +17,7 @@
 #include maps/mp/zombies/_zm_weap_ballistic_knife;
 
 
-init() //checked matches cerberus output
+init() //modified function
 {
 	//begin debug
 	level.custom_zm_weapons_loaded = 1;
@@ -27,6 +27,9 @@ init() //checked matches cerberus output
 		level.debugLogging_zm_weapons = 0;
 	}
 	//end debug
+	level.zombiemode_reusing_pack_a_punch = 1;
+	level.monolingustic_prompt_format = 0;
+	precacheEffectsForWeapons(); //custom function
 	init_weapons();
 	init_weapon_upgrade();
 	init_weapon_toggle();
@@ -40,6 +43,41 @@ init() //checked matches cerberus output
 	setupretrievablehintstrings();
 	level thread onplayerconnect();
 
+}
+
+precacheEffectsForWeapons() //custom function
+{
+	if(level.script == "zm_prison" || level.script == "zm_transit" || level.script == "zm_highrise" || level.script == "zm_buried")
+	{
+		level._effect[ "olympia_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_olympia" );
+		level._effect[ "m16_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_m16" );
+		level._effect[ "galvaknuckles_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_taseknuck" );
+		level._effect[ "mp5k_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_mp5k" );
+		level._effect[ "bowie_knife_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_bowie" );
+		level._effect[ "m14_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_m14" );
+		level._effect[ "ak74u_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_ak74u" );
+		level._effect[ "b23r_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_berreta93r" );
+		level._effect[ "claymore_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_claymore" );
+	}
+	if(level.script == "zm_highrise" || level.script == "zm_buried")
+	{
+		level._effect[ "870mcs_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_870mcs" );
+		level._effect[ "an94_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_an94" );
+		level._effect[ "pdw57_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_pdw57" );
+		level._effect[ "svu_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_svuas" );
+
+
+	}
+	if(level.script == "zm_prison")
+	{
+		level._effect[ "thompson_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_thompson" );
+		level._effect[ "870mcs_effect" ] = loadfx( "maps/zombie/fx_zmb_wall_buy_870mcs" );
+	}
+
+	if(level.script == "zm_tomb")
+	{
+		level._effect[ "oneinchpunch_effect" ] = loadfx( "maps/zombie_tomb/fx_tomb_perk_one_inch_punch" );
+	}
 }
 
 setupretrievablehintstrings() //checked matches cerberus output
@@ -251,7 +289,7 @@ take_fallback_weapon() //checked matches cerberus output
 
 switch_back_primary_weapon( oldprimary ) //checked changed to match cerberus output
 {
-	if ( is_true( self.laststand ) )
+	if ( isDefined( self.laststand ) && self.laststand )
 	{
 		return;
 	}
@@ -568,7 +606,7 @@ add_zombie_weapon( weapon_name, upgrade_name, hint, cost, weaponvo, weaponvoresp
 	
 	
 	level.zombie_weapons[ weapon_name ] = struct;
-	if ( is_true( level.zombiemode_reusing_pack_a_punch ) && isDefined( upgrade_name ) )
+	if ( isDefined( level.zombiemode_reusing_pack_a_punch ) && level.zombiemode_reusing_pack_a_punch && isDefined( upgrade_name ) )
 	{
 		add_attachments( weapon_name, upgrade_name );
 	}
@@ -733,6 +771,8 @@ include_zombie_weapon( weapon_name, in_box, collector, weighting_func ) //checke
 
 init_weapons() //checked matches cerberus output
 {
+	//throws exe_client_field_mismatch on join
+	//or the server won't rotate to the map
 	if ( isdefined( level._zombie_custom_add_weapons ) )
 	{
 		[[ level._zombie_custom_add_weapons ]]();
@@ -766,7 +806,7 @@ limited_weapon_below_quota( weapon, ignore_player, pap_triggers ) //checked chan
 		}
 		if ( is_true( level.no_limited_weapons ) )
 		{
-			return 0;
+			return 1;
 		}
 		upgradedweapon = weapon;
 		if ( isDefined( level.zombie_weapons[ weapon ] ) && isDefined( level.zombie_weapons[ weapon ].upgrade_name ) )
@@ -875,7 +915,7 @@ player_can_use_content( weapon ) //checked matches cerberus output
 	return 1;
 }
 
-init_spawnable_weapon_upgrade() //checked partially changed to match cerberus output
+init_spawnable_weapon_upgrade() //modified function
 {
 	spawn_list = [];
 	spawnable_weapon_spawns = getstructarray( "weapon_upgrade", "targetname" );
@@ -924,12 +964,255 @@ init_spawnable_weapon_upgrade() //checked partially changed to match cerberus ou
 		}
 		i++;
 	}
+	if( isdefined(level.customMap) && level.customMap == "trenches" )
+	{
+		thread customWallbuy("one_inch_punch_zm", "One Inch Punch", 6000, 3000, (-696.237, 2316.02, -111.875), (0, 0, 0), "staff_soul");
+	}
+	if( isdefined(level.customMap) && level.customMap == "crazyplace" )
+	{
+		thread customWallbuy("one_inch_punch_zm", "One Inch Punch", 6000, 3000, (10339, -7905, -411), (0, 0, 0), "staff_soul");
+	}
+	else if( isdefined(level.customMap) && level.customMap == "maze" )
+	{
+		rWS = [];
+		rWS[0] = SpawnStruct();
+		rWS[0].origin = (5140.33, 572.657, 6.8168) + (10,0,0);
+		rWS[0].angles = (0,90,0);
+		rWS[1] = SpawnStruct();
+		rWS[1].origin = (4390.66, 272.359, 13.4238) + (0,14,0);
+		rWS[1].angles = (0,180,0);
+		rWS[2] = SpawnStruct();
+		rWS[2].origin = (4856.32, -344.359, 4.125) + (0,-14,0);
+		rWS[2].angles = (0,0,0);
+		rWS[3] = SpawnStruct();
+		rWS[3].origin = (3962.99, 183.641, 0.125) + (0,-14,0);
+		rWS[3].angles = (0,0,0);
+		rWS[4] = SpawnStruct();
+		rWS[4].origin = (5080.58, 1496.36, 4.125) + (0,14,0);
+		rWS[4].angles = (0,180,0);
+		rWS[5] = SpawnStruct();
+		rWS[5].origin = (7065.11, 618.362, 108.125) + (16,0,0);
+		rWS[5].angles = (0,90,0);
+		rWS = array_randomize(rWS);
+		thread customWallbuy("m14_zm", "M14", 500, 250, rWS[0].origin, rWS[0].angles, "m14_effect");
+		thread customWallbuy("rottweil72_zm", "Olympia", 500, 250, rWS[1].origin, rWS[1].angles, "olympia_effect");
+		thread customWallbuy("tazer_knuckles_zm", "Galvaknuckles", 6000, 3000, rWS[2].origin, rWS[2].angles, "galvaknuckles_effect");
+		thread customWallbuy("an94_zm", "AN-94", 1200, 600, rWS[3].origin, rWS[3].angles, "an94_effect");
+		thread customWallbuy("svu_zm", "SVU-AS", 1000, 500, rWS[4].origin, rWS[4].angles, "svu_effect");
+		thread customWallbuy("870mcs_zm", "Remington 870 MCS", 1500, 750, rWS[5].origin, rWS[5].angles, "870mcs_effect");
+	}
 	tempmodel = spawn( "script_model", ( 0, 0, 0 ) );
 	i = 0;
 	while ( i < spawn_list.size )
 	{
 		clientfieldname = spawn_list[ i ].zombie_weapon_upgrade + "_" + spawn_list[ i ].origin;
 		numbits = 2;
+		if ( isDefined(level.customMap) && level.customMap == "docks" )
+		{
+			if( spawn_list[ i ].zombie_weapon_upgrade == "870mcs_zm" && spawn_list[ i ].origin == (601, 9407, 1163) )
+			{
+				spawn_list[ i ].origin = (-340, 6204, 43.5);
+				spawn_list[ i ].angles = ( 0, 10, 0 );
+				thread playchalkfx("870mcs_effect", spawn_list[ i ].origin, (0,190,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m14_zm" )
+			{
+				spawn_list[ i ].origin = (306.5, 6376, 319);
+				spawn_list[ i ].angles = ( 0, -90, 0 );
+				thread playchalkfx("m14_effect", spawn_list[ i ].origin, (0,-83,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (-709, 5721, -19.875);
+				spawn_list[ i ].angles = ( 0, -80, 30 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,-80,30));
+			}
+		}
+		else if ( isDefined(level.customMap) && level.customMap == "rooftop" )
+		{
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m14_zm" )
+			{
+				spawn_list[ i ].origin = (3153, 9873.5, 1759);
+				spawn_list[ i ].angles = ( 0, 90, 0 );
+				thread playchalkfx("m14_effect", spawn_list[ i ].origin, (0,90,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (3079.5, 9358, 1759);
+				spawn_list[ i ].angles = ( 0, 90, 0 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,90,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "thompson_zm" )
+			{
+				spawn_list[ i ].origin = (2479.5, 9490.5, 1583);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("thompson_effect", spawn_list[ i ].origin, (0,0,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "mp5k_zm" )
+			{
+				spawn_list[ i ].origin = (2991.5, 9982, 1615);
+				spawn_list[ i ].angles = ( 0, 180, 0 );
+				thread playchalkfx("mp5k_effect", spawn_list[ i ].origin, (0,180,0));
+			}
+		}
+		else if ( isDefined(level.customMap) && level.customMap == "tunnel" )
+		{
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m14_zm" )
+			{
+				spawn_list[ i ].origin = (-11166, -2844, 247);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m14_effect", spawn_list[ i ].origin, (0,-86,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (-10790, -1430, 247);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,83,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "mp5k_zm" )
+			{
+				spawn_list[ i ].origin = (-10625, -545, 247);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("mp5k_effect", spawn_list[ i ].origin, (0,83,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "tazer_knuckles_zm" )
+			{
+				spawn_list[ i ].origin = (-11839, -2406, 283);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("galvaknuckles_effect", spawn_list[ i ].origin, (0,-93,0));
+			}
+		}
+		else if ( isDefined(level.customMap) && level.customMap == "diner" )
+		{
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m14_zm" )
+			{
+				spawn_list[ i ].origin = (-4280, -7486, -5);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m14_effect", spawn_list[ i ].origin, (0,0,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (-5085, -7807, -5);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,0,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m16_zm" )
+			{
+				spawn_list[ i ].origin = (-3578, -7181, 0);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m16_effect", spawn_list[ i ].origin, (0,180,0));
+			}
+		}
+		else if ( isDefined(level.customMap) && level.customMap == "cornfield" )
+		{
+			/*
+			if( spawn_list[ i ].zombie_weapon_upgrade == "beretta93r_zm" )
+			{
+				spawn_list[ i ].origin = (12968, -917, -142);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("b23r_effect", spawn_list[ i ].origin, (0,0,0));
+			}
+			*/
+			if( spawn_list[ i ].zombie_weapon_upgrade == "claymore_zm" )
+			{
+				spawn_list[ i ].origin = (13603, -1282, -134);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("claymore_effect", spawn_list[ i ].origin, (0,-180,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (13663, -1166, -134);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,-90,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m16_zm" )
+			{
+				spawn_list[ i ].origin = (14092, -351, -133);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m16_effect", spawn_list[ i ].origin, (0,90,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "mp5k_zm" )
+            {
+                spawn_list[ i ].origin = (13542, -764, -133);
+                spawn_list[ i ].angles = ( 0, 0, 0 );
+                thread playchalkfx("mp5k_effect", spawn_list[ i ].origin + (0, 7, 0), (0,90,0));
+            }
+			if( spawn_list[ i ].zombie_weapon_upgrade == "tazer_knuckles_zm" )
+			{
+				spawn_list[ i ].origin = (13502, -12, -125);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("galvaknuckles_effect", spawn_list[ i ].origin + (0, 13, 0), (0,90,0));
+			}
+		}
+		else if ( isDefined(level.customMap) && level.customMap == "house" )
+		{
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m14_zm" )
+			{
+				spawn_list[ i ].origin = (5270, 6668, 31);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m14_effect", spawn_list[ i ].origin, (0,0,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (5004, 6696, 31);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,270,0));
+			}
+			if( spawn_list[ i ].zombie_weapon_upgrade == "mp5k_zm" )
+			{
+				spawn_list[ i ].origin = (5143, 6651, 31);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("mp5k_effect", spawn_list[ i ].origin, (0,180,0));
+			}
+		}
+		else if ( isDefined(level.customMap) && level.customMap == "power" )
+		{
+			if( spawn_list[ i ].zombie_weapon_upgrade == "m14_zm" )
+			{
+				spawn_list[ i ].origin = (10559, 8226, -504);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m14_effect", spawn_list[ i ].origin, (0,90,0));
+			}
+			else if( spawn_list[ i ].zombie_weapon_upgrade == "rottweil72_zm" )
+			{
+				spawn_list[ i ].origin = (11769, 7662, -701);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("olympia_effect", spawn_list[ i ].origin, (0,170,0));
+			}
+			else if( spawn_list[ i ].zombie_weapon_upgrade == "m16_zm" )
+			{
+				spawn_list[ i ].origin = (10859, 8146, -353);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("m16_effect", spawn_list[ i ].origin, (0,0,0));
+			}
+			else if( spawn_list[ i ].zombie_weapon_upgrade == "mp5k_zm" )
+			{
+				spawn_list[ i ].origin = (11452, 8692, -521);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("mp5k_effect", spawn_list[ i ].origin, (0,90,0));
+			}
+			else if( spawn_list[ i ].zombie_weapon_upgrade == "bowie_knife_zm" )
+			{
+				spawn_list[ i ].origin = (10837, 8135, -490);
+				spawn_list[ i ].angles = ( 0, 0, 0 );
+				thread playchalkfx("bowie_knife_effect", spawn_list[ i ].origin, (0,180,0));
+			}
+		}
+		else if(isdefined(level.customMap) && level.customMap == "building1top")
+		{
+			if( spawn_list[i].zombie_weapon_upgrade == "tazer_knuckles_zm")
+			{
+				spawn_list[ i ].origin = (1109.64, 2570.07, 3100) + (-14,0,0);
+				spawn_list[ i ].angles = (0, 270, 0);
+				thread playchalkfx("galvaknuckles_effect", spawn_list[ i ].origin, (0,270,0));
+			}
+			else if( spawn_list[i].zombie_weapon_upgrade == "an94_zm")
+			{
+				spawn_list[ i ].origin = (1469.64, 2026.42, 3113) + (-14,0,0);
+				spawn_list[ i ].angles = (0, 270, 0);
+				thread playchalkfx("an94_effect", spawn_list[ i ].origin, (0,270,0));
+			}
+		}
 		if ( isDefined( level._wallbuy_override_num_bits ) )
 		{
 			numbits = level._wallbuy_override_num_bits;
@@ -975,7 +1258,7 @@ init_spawnable_weapon_upgrade() //checked partially changed to match cerberus ou
 		if ( spawn_list[ i ].targetname == "weapon_upgrade" )
 		{
 			unitrigger_stub.cost = get_weapon_cost( spawn_list[ i ].zombie_weapon_upgrade );
-			if ( !is_true( level.monolingustic_prompt_format ) )
+			if ( isDefined( level.monolingustic_prompt_format ) && !level.monolingustic_prompt_format )
 			{
 				unitrigger_stub.hint_string = get_weapon_hint( spawn_list[ i ].zombie_weapon_upgrade );
 				unitrigger_stub.hint_parm1 = unitrigger_stub.cost;
@@ -1024,6 +1307,90 @@ init_spawnable_weapon_upgrade() //checked partially changed to match cerberus ou
 	}
 	level._spawned_wallbuys = spawn_list;
 	tempmodel delete();
+}
+
+customWallbuy(weapon, displayName, cost, ammoCost, origin, angles, fx) //custom function
+{
+	level endon("end_game");
+	if(!isdefined(weapon) || !isdefined(origin) || !isdefined(angles))
+		return;
+	if(!isdefined(cost))
+		cost = 1000;
+	trig = spawn("trigger_radius", origin, 1, 50, 50);
+	trig SetCursorHint("HINT_NOICON");
+	thread playchalkfx(fx, origin + (0,0,55), angles);
+	if(is_melee_weapon(weapon) || weapon_no_ammo(weapon))
+	{
+		trig SetHintString("Hold ^3&&1^7 to buy " + displayName + " [Cost: " + cost + "]");
+	}
+	else
+	{
+		trig SetHintString("Hold ^3&&1^7 to buy " + displayName + " [Cost: " + cost + " Ammo: " + ammoCost + " Upg: 4500]");
+	}
+	for(;;)
+	{
+		trig waittill("trigger", player);
+		if(player UseButtonPressed() && player can_buy_weapon())
+		{
+
+			if(!player has_weapon_or_upgrade( weapon ) && player.score >= cost)
+			{
+				player.score -= cost;
+				player playsound("zmb_cha_ching");
+				if(weapon == "one_inch_punch_zm" && isdefined(level.oneInchPunchGiveFunc))
+				{
+					player thread [[level.oneInchPunchGiveFunc]]();
+				}
+				else
+					player weapon_give(weapon);
+				wait 3;
+			}
+			else
+			{
+				if(player has_upgrade(weapon) && player.score >= 4500)
+				{
+					if(player ammo_give(get_upgrade_weapon(weapon)))
+					{
+						player.score -= 4500;
+						player playsound("zmb_cha_ching");
+						wait 3;
+					}
+				}
+				else if(player.score >= ammoCost)
+				{
+					if(player ammo_give(weapon))
+					{
+						player.score -= ammoCost;
+						player playsound("zmb_cha_ching");
+						wait 3;
+					}
+				}
+			}
+		}
+		wait .1;
+	}
+}
+
+weapon_no_ammo(weapon) //custom function
+{
+	if(weapon == "one_inch_punch_zm")
+	{
+		return 1;
+	}
+	return 0;
+}
+
+playchalkfx(effect, origin, angles) //custom function
+{
+	if(!isdefined(effect))
+		return;
+	for(;;)
+	{
+		fx = SpawnFX(level._effect[ effect ], origin,AnglesToForward(angles),AnglesToUp(angles));
+		TriggerFX(fx);
+		level waittill("connected", player);
+		fx Delete();
+	}
 }
 
 add_dynamic_wallbuy( weapon, wallbuy, pristine ) //checked partially changed to match cerberus output
@@ -1146,7 +1513,7 @@ wall_weapon_update_prompt( player ) //checked partially changed to match cerberu
 	if ( isDefined( level.monolingustic_prompt_format ) && !level.monolingustic_prompt_format )
 	{
 		player_has_weapon = player has_weapon_or_upgrade( weapon );
-		if ( !player_has_weapon && is_true( level.weapons_using_ammo_sharing ) )
+		if ( !player_has_weapon && isDefined( level.weapons_using_ammo_sharing ) && level.weapons_using_ammo_sharing )
 		{
 			shared_ammo_weapon = player get_shared_ammo_weapon( self.zombie_weapon_upgrade );
 			if ( isDefined( shared_ammo_weapon ) )
@@ -1161,7 +1528,7 @@ wall_weapon_update_prompt( player ) //checked partially changed to match cerberu
 			self.stub.hint_string = get_weapon_hint( weapon );
 			self sethintstring( self.stub.hint_string, cost );
 		}
-		else if ( is_true( level.use_legacy_weapon_prompt_format ) )
+		else if ( isDefined( level.use_legacy_weapon_prompt_format ) && level.use_legacy_weapon_prompt_format )
 		{
 			cost = get_weapon_cost( weapon );
 			ammo_cost = get_ammo_cost( weapon );
@@ -1182,7 +1549,7 @@ wall_weapon_update_prompt( player ) //checked partially changed to match cerberu
 	else if ( !player has_weapon_or_upgrade( weapon ) )
 	{
 		string_override = 0;
-		if ( is_true( player.pers_upgrades_awarded[ "nube" ] ) )
+		if ( isDefined( player.pers_upgrades_awarded[ "nube" ] ) && player.pers_upgrades_awarded[ "nube" ] )
 		{
 			string_override = maps/mp/zombies/_zm_pers_upgrades_functions::pers_nube_ammo_hint_string( player, weapon );
 		}
@@ -1190,7 +1557,7 @@ wall_weapon_update_prompt( player ) //checked partially changed to match cerberu
 		{
 			cost = get_weapon_cost( weapon );
 			weapon_display = get_weapon_display_name( weapon );
-			if ( !isDefined( weapon_display ) || weapon_display == "" || weapon_display == "none" )
+			if ( isDefined( weapon_display ) || weapon_display == "" || weapon_display == "none" )
 			{
 				weapon_display = "missing weapon name " + weapon;
 			}
@@ -1284,7 +1651,7 @@ init_weapon_upgrade() //checked changed to match cerberus output
 	weapon_spawns = getentarray( "weapon_upgrade", "targetname" );
 	for ( i = 0; i < weapon_spawns.size; i++ )
 	{
-		if ( !is_true( level.monolingustic_prompt_format ) )
+		if ( isDefined( level.monolingustic_prompt_format ) && !level.monolingustic_prompt_format )
 		{
 			hint_string = get_weapon_hint( weapon_spawns[ i ].zombie_weapon_upgrade );
 			cost = get_weapon_cost( weapon_spawns[ i ].zombie_weapon_upgrade );
@@ -1302,6 +1669,7 @@ init_weapon_upgrade() //checked changed to match cerberus output
 			hint_string = &"ZOMBIE_WEAPONCOSTONLY";
 			weapon_spawns[ i ] sethintstring( hint_string, weapon_display, cost );
 		}
+	
 		weapon_spawns[ i ] usetriggerrequirelookat();
 		weapon_spawns[ i ] thread weapon_spawn_think();
 		model = getent( weapon_spawns[ i ].target, "targetname" );
@@ -1590,7 +1958,11 @@ weapon_supports_default_attachment( weaponname ) //checked matches cerberus outp
 	{
 		attachment = level.zombie_weapons[ weaponname ].default_attachment;
 	}
-	return isDefined( attachment );
+	if ( isDefined( attachment ) )
+	{
+		return 1;
+	}
+	return 0;
 }
 
 default_attachment( weaponname ) //checked matches cerberus output
@@ -1617,7 +1989,7 @@ weapon_supports_attachments( weaponname ) //checked changed at own discretion
 	{
 		attachments = level.zombie_weapons[ weaponname ].addon_attachments;
 	}
-	if ( isDefined( attachments ) && attachments.size > 0 ) //was 1
+	if ( isDefined( attachments ) && attachments.size > 1 )
 	{
 		return 1;
 	}
@@ -1776,7 +2148,7 @@ get_upgrade_weapon( weaponname, add_attachment ) //checked changed to match cerb
 	{
 		newweapon = level.zombie_weapons[ rootweaponname ].upgrade_name;
 	}
-	if ( is_true( add_attachment ) && is_true( level.zombiemode_reusing_pack_a_punch ) )
+	if ( isDefined( add_attachment ) && add_attachment && isDefined( level.zombiemode_reusing_pack_a_punch ) && level.zombiemode_reusing_pack_a_punch )
 	{
 		oldatt = get_attachment_name( weaponname );
 		att = random_attachment( baseweaponname, oldatt );
@@ -1798,11 +2170,11 @@ can_upgrade_weapon( weaponname ) //checked changed to match cerberus output
 	}
 	weaponname = tolower( weaponname );
 	weaponname = get_base_name( weaponname );
-	if ( !is_weapon_upgraded( weaponname ) && isDefined( level.zombie_weapons[ weaponname ].upgrade_name ) )
+	if ( !is_weapon_upgraded( weaponname ) )
 	{
-		return 1;
+		return isDefined( level.zombie_weapons[ weaponname ].upgrade_name );
 	}
-	if ( is_true( level.zombiemode_reusing_pack_a_punch ) && weapon_supports_attachments( weaponname ) )
+	if ( isDefined( level.zombiemode_reusing_pack_a_punch ) && level.zombiemode_reusing_pack_a_punch && weapon_supports_attachments( weaponname ) )
 	{
 		return 1;
 	}
@@ -1821,7 +2193,7 @@ will_upgrade_weapon_as_attachment( weaponname ) //checked changed to match cerbe
 	{
 		return 0;
 	}
-	if ( is_true( level.zombiemode_reusing_pack_a_punch ) && weapon_supports_attachments( weaponname ) )
+	if ( isDefined( level.zombiemode_reusing_pack_a_punch ) && level.zombiemode_reusing_pack_a_punch && weapon_supports_attachments( weaponname ) )
 	{
 		return 1;
 	}
@@ -1849,7 +2221,7 @@ get_weapon_with_attachments( weaponname ) //checked changed to match cerberus ou
 	{
 		return weaponname;
 	}
-	if ( is_true( level.zombiemode_reusing_pack_a_punch ) )
+	if ( isDefined( level.zombiemode_reusing_pack_a_punch ) && level.zombiemode_reusing_pack_a_punch )
 	{
 		weaponname = tolower( weaponname );
 		weaponname = get_base_name( weaponname );
@@ -1873,7 +2245,7 @@ has_weapon_or_attachments( weaponname ) //checked changed to match cerberus outp
 	{
 		return 1;
 	}
-	if ( is_true( level.zombiemode_reusing_pack_a_punch ) )
+	if ( isDefined( level.zombiemode_reusing_pack_a_punch ) && level.zombiemode_reusing_pack_a_punch )
 	{
 		weaponname = tolower( weaponname );
 		weaponname = get_base_name( weaponname );
@@ -1979,7 +2351,7 @@ get_player_weapon_with_same_base( weaponname ) //checked changed tp match cerber
 
 get_weapon_hint_ammo() //checked matches cerberus output
 {
-	if ( !is_true( level.has_pack_a_punch ) )
+	if ( isDefined( level.has_pack_a_punch ) && !level.has_pack_a_punch )
 	{
 		return &"ZOMBIE_WEAPONCOSTAMMO";
 	}
@@ -2006,7 +2378,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 		second_endon = "kill_trigger";
 		self.first_time_triggered = self.stub.first_time_triggered;
 	}
-	if ( isDefined( self.stub ) && is_true( self.stub.trigger_per_player ) )
+	if ( isDefined( self.stub ) && isDefined( self.stub.trigger_per_player ) && self.stub.trigger_per_player )
 	{
 		self thread decide_hide_show_hint( "stop_hint_logic", second_endon, self.parent_player );
 	}
@@ -2030,7 +2402,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 	}
 	else if ( self.first_time_triggered )
 	{
-		if ( is_true( level.use_legacy_weapon_prompt_format ) )
+		if ( isDefined( level.use_legacy_weapon_prompt_format ) && level.use_legacy_weapon_prompt_format )
 		{
 			self weapon_set_first_time_hint( cost, get_ammo_cost( self.zombie_weapon_upgrade ) );
 		}
@@ -2048,7 +2420,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 			wait 0.1;
 			continue;
 		}
-		if ( isDefined( self.stub ) && is_true( self.stub.require_look_from ) )
+		if ( isDefined( self.stub ) && isDefined( self.stub.require_look_from ) && self.stub.require_look_from )
 		{
 			toplayer = player get_eye() - self.origin;
 			forward = -1 * anglesToRight( self.angles );
@@ -2064,7 +2436,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 			continue;
 		}
 		player_has_weapon = player has_weapon_or_upgrade( self.zombie_weapon_upgrade );
-		if ( !player_has_weapon && is_true( level.weapons_using_ammo_sharing ) )
+		if ( !player_has_weapon && isDefined( level.weapons_using_ammo_sharing ) && level.weapons_using_ammo_sharing )
 		{
 			shared_ammo_weapon = player get_shared_ammo_weapon( self.zombie_weapon_upgrade );
 			if ( isDefined( shared_ammo_weapon ) )
@@ -2072,7 +2444,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 				player_has_weapon = 1;
 			}
 		}
-		if ( is_true( level.pers_upgrade_nube ) )
+		if ( isDefined( level.pers_upgrade_nube ) && level.pers_upgrade_nube )
 		{
 			player_has_weapon = maps/mp/zombies/_zm_pers_upgrades_functions::pers_nube_should_we_give_raygun( player_has_weapon, player, self.zombie_weapon_upgrade );
 		}
@@ -2110,7 +2482,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 					player set_player_lethal_grenade( self.zombie_weapon_upgrade );
 				}
 				str_weapon = self.zombie_weapon_upgrade;
-				if ( is_true( level.pers_upgrade_nube ) )
+				if ( isDefined( level.pers_upgrade_nube ) && level.pers_upgrade_nube )
 				{
 					str_weapon = maps/mp/zombies/_zm_pers_upgrades_functions::pers_nube_weapon_upgrade_check( player, str_weapon );
 				}
@@ -2131,11 +2503,11 @@ weapon_spawn_think() //checked changed to match cerberus output
 			{
 				str_weapon = shared_ammo_weapon;
 			}
-			if ( is_true( level.pers_upgrade_nube ) )
+			if ( isDefined( level.pers_upgrade_nube ) && level.pers_upgrade_nube )
 			{
 				str_weapon = maps/mp/zombies/_zm_pers_upgrades_functions::pers_nube_weapon_ammo_check( player, str_weapon );
 			}
-			if ( is_true( self.hacked ) )
+			if ( isDefined( self.hacked ) && self.hacked )
 			{
 				if ( !player has_upgrade( str_weapon ) )
 				{
@@ -2154,7 +2526,7 @@ weapon_spawn_think() //checked changed to match cerberus output
 			{
 				ammo_cost = get_ammo_cost( str_weapon );
 			}
-			if ( is_true( player.pers_upgrades_awarded[ "nube" ] ) )
+			if ( isDefined( player.pers_upgrades_awarded[ "nube" ] ) && player.pers_upgrades_awarded[ "nube" ] )
 			{
 				ammo_cost = maps/mp/zombies/_zm_pers_upgrades_functions::pers_nube_override_ammo_cost( player, self.zombie_weapon_upgrade, ammo_cost );
 			}
@@ -2247,7 +2619,7 @@ show_all_weapon_buys( player, cost, ammo_cost, is_grenade ) //checked changed to
 	{
 		self weapon_set_first_time_hint( cost, ammo_cost );
 	}
-	if ( !is_true( level.dont_link_common_wallbuys ) && isDefined( level._spawned_wallbuys ) )
+	if ( isDefined( level.dont_link_common_wallbuys ) && !level.dont_link_common_wallbuys && isDefined( level._spawned_wallbuys ) )
 	{
 		i = 0;
 		while ( i < level._spawned_wallbuys.size )
@@ -2511,7 +2883,7 @@ weapon_give( weapon, is_upgrade, magic_box, nosound ) //checked changed to match
 		play_weapon_vo( weapon, magic_box );
 		return;
 	}
-	if ( !is_true( nosound ) )
+	if ( isDefined( nosound ) && !nosound )
 	{
 		self play_sound_on_ent( "purchase" );
 	}
@@ -2602,7 +2974,8 @@ ammo_give( weapon ) //checked changed to match cerberus output
 			stockmax = weaponstartammo( weapon );
 			clipcount = self getweaponammoclip( weapon );
 			currstock = self getammocount( weapon );
-			if ( ( currstock - clipcount ) >= stockmax )
+			stockleft = currstock - clipcount;
+			if ( stockleft >= stockmax )
 			{
 				give_ammo = 0;
 			}
@@ -2795,13 +3168,3 @@ register_zombie_weapon_callback( str_weapon, func ) //checked matches cerberus o
 		level.zombie_weapons_callbacks[ str_weapon ] = func;
 	}
 }
-
-
-
-
-
-
-
-
-
-
