@@ -16,9 +16,6 @@ box_lock_condition()
 	{
 		return 0;
 	}
-/#
-	self sloth_debug_context( box, sqrt( 32400 ) );
-#/
 	if ( flag( "moving_chest_now" ) )
 	{
 		return 0;
@@ -54,9 +51,6 @@ common_abort_box( box )
 	{
 		if ( is_true( box._box_open ) || is_true( box._box_opened_by_fire_sale ) )
 		{
-/#
-			sloth_print( "box was opened...abort" );
-#/
 			self.context_done = 1;
 			return 1;
 		}
@@ -80,7 +74,7 @@ common_move_to_maze( box )
 		else
 		{
 			self maps/mp/zombies/_zm_ai_sloth::action_navigate_mansion( level.maze_depart, level.maze_arrive );
-			wait 0,2;
+			wait 0.2;
 		}
 	}
 	return 1;
@@ -102,7 +96,7 @@ common_move_to_courtyard( box )
 		else
 		{
 			self maps/mp/zombies/_zm_ai_sloth::action_navigate_mansion( level.courtyard_depart, level.courtyard_arrive );
-			wait 0,2;
+			wait 0.2;
 		}
 	}
 	return 1;
@@ -134,9 +128,6 @@ common_move_to_box( box, range, ignore_open, asd_name )
 		}
 		if ( !is_true( ignore_open ) || is_true( box._box_open ) && is_true( box._box_opened_by_fire_sale ) )
 		{
-/#
-			sloth_print( "box was opened...abort" );
-#/
 			self.context_done = 1;
 			return 0;
 		}
@@ -147,21 +138,21 @@ common_move_to_box( box, range, ignore_open, asd_name )
 		}
 		else
 		{
-			wait 0,1;
+			wait 0.1;
 		}
 	}
 	if ( isDefined( asd_name ) )
 	{
 		self setgoalpos( self.origin );
-		self sloth_face_object( box, "angle", start_ang[ 1 ], 0,9 );
+		self sloth_face_object( box, "angle", start_ang[ 1 ], 0.9 );
 	}
 	else
 	{
-		angles = vectorToAngle( vec_right );
+		angles = vectorToAngles( vec_right );
 		self.anchor.origin = self.origin;
 		self.anchor.angles = angles;
 		self orientmode( "face angle", angles[ 1 ] );
-		wait 0,2;
+		wait 0.2;
 	}
 	if ( flag( "moving_chest_now" ) )
 	{
@@ -189,9 +180,6 @@ box_lock_action()
 		return;
 	}
 	setdvar( "magic_chest_movable", "0" );
-/#
-	sloth_print( "box will not move" );
-#/
 	maps/mp/zombies/_zm_ai_sloth::unregister_candy_context( "box_lock" );
 	maps/mp/zombies/_zm_ai_sloth::unregister_candy_context( "box_move" );
 	self.context_done = 1;
@@ -227,37 +215,10 @@ box_move_condition()
 	}
 	if ( box_current.script_noteworthy == "maze_chest1" || box_current.script_noteworthy == "maze_chest2" )
 	{
-		self.box_current_in_maze = 1;
 		if ( !is_maze_open() )
 		{
 			return 0;
 		}
-	}
-	i = 0;
-	while ( i < level.chests.size )
-	{
-		if ( i == level.chest_index )
-		{
-			i++;
-			continue;
-		}
-		else
-		{
-			box = level.chests[ i ];
-			if ( box.script_noteworthy != "maze_chest1" )
-			{
-				self.box_move_in_maze = box.script_noteworthy == "maze_chest2";
-			}
-			dist = distancesquared( self.origin, box.origin );
-			if ( dist < 32400 )
-			{
-				self.box_move_index = i;
-				self.box_move = box;
-				self.box_current = box_current;
-				return 1;
-			}
-		}
-		i++;
 	}
 	return 0;
 }
@@ -267,9 +228,6 @@ box_move_action()
 	self endon( "death" );
 	self endon( "stop_action" );
 	self maps/mp/zombies/_zm_ai_sloth::common_context_action();
-/#
-	sloth_print( "moving box from: " + self.box_current.script_noteworthy + " to: " + self.box_move.script_noteworthy );
-#/
 	if ( !self common_move_to_box( self.box_move, 1024, 0, "zm_magicbox_point" ) )
 	{
 		return;
@@ -492,7 +450,7 @@ box_trigger()
 		self.chest.zbarrier waittill( "randomization_done" );
 		if ( !flag( "moving_chest_now" ) )
 		{
-			thread maps/mp/zombies/_zm_unitrigger::register_static_unitrigger( self.chest.unitrigger_stub, ::maps/mp/zombies/_zm_magicbox::magicbox_unitrigger_think );
+			thread maps/mp/zombies/_zm_unitrigger::register_static_unitrigger( self.chest.unitrigger_stub, maps/mp/zombies/_zm_magicbox::magicbox_unitrigger_think );
 		}
 	}
 }
@@ -509,9 +467,6 @@ box_spin_qualifier( hackable )
 	}
 	if ( !hackable maps/mp/zombies/_zm_hackables_box::hack_box_qualifier( self.candy_player ) )
 	{
-/#
-		sloth_print( "hack_box_qualifier failed" );
-#/
 		self.context_done = 1;
 		return 0;
 	}
