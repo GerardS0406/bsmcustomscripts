@@ -392,16 +392,6 @@ set_treasure_chest_cost( cost ) //checked matches cerberus output
 get_chest_pieces() //modified function
 {
 	self.chest_box = getent( self.script_noteworthy + "_zbarrier", "script_noteworthy" );
-	if ( isDefined( level.customMap ) && level.customMap == "redroom" && self.script_noteworthy == "start_chest" )
-	{
-		self.chest_box.origin = ( 3731.95, 1817.7, 1430.5 );
-		self.chest_box.angles = ( 0, 90, 0 );
-	}
-	if ( isDefined( level.customMap ) && level.customMap == "redroom" && self.script_noteworthy == "gb1_chest" )
-	{
-		self.chest_box.origin = ( 2825.45, 1861.31, 1402 );
-		self.chest_box.angles = ( 12.5, 180, 0 );
-	}
 	if ( isDefined( level.customMap ) && level.customMap == "building1top" && self.script_noteworthy == "ob6_chest" )
 	{
 		self.chest_box.origin = (1608.58, 1053.19, 3221.79);
@@ -411,6 +401,16 @@ get_chest_pieces() //modified function
 	{
 		self.chest_box.origin = (2177.11, 2416.36, 3040.13);
 		self.chest_box.angles = (0, 180, 0);
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "redroom" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( 3731.95, 1817.7, 1430.5 );
+		self.chest_box.angles = ( 0, 90, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "redroom" && self.script_noteworthy == "gb1_chest" )
+	{
+		self.chest_box.origin = ( 2825.45, 1861.31, 1402 );
+		self.chest_box.angles = ( 12.5, 180, 0 );
 	}
 	if ( isDefined( level.customMap ) && level.customMap == "docks" && self.script_noteworthy == "start_chest" )
 	{
