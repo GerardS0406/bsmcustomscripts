@@ -164,6 +164,12 @@ main() //checked changed to match cerberus output
 	level.zombiemode_using_revive_perk = 1;
 	level.zombiemode_using_sleightofhand_perk = 1;
 	level.zombiemode_using_chugabud_perk = 1;
+	if(isdefined(level.customMap) && level.customMap != "vanilla")
+	{
+		level.zombiemode_using_divetonuke_perk = 1;
+		maps/mp/zombies/_zm_perks::register_perk_basic_info( "specialty_flakjacket", "divetonuke", 2000, &"ZOMBIE_PERK_DIVETONUKE", "zombie_perk_bottle_jugg" );
+		maps/mp/zombies/_zm_perks::register_perk_machine( "specialty_flakjacket", ::divetonuke_perk_machine_setup, ::divetonuke_perk_machine_think );
+	}
 	level.zombiemode_using_additionalprimaryweapon_perk = 1;
 	level._custom_zombie_audio_func = ::custom_zombie_audio_func;
 	init_persistent_abilities();
@@ -258,6 +264,86 @@ main() //checked changed to match cerberus output
 	trigs = getentarray( "force_from_prone", "targetname" );
 	array_thread( trigs, ::player_force_from_prone );
 	level._dont_unhide_quickervive_on_hotjoin = 1;
+	if(isdefined(level.customMap) && level.customMap != "vanilla")
+	{
+		level thread override_zombie_count();
+		level waittill("initial_blackscreen_passed");
+		foreach(elevator in level.elevators)
+		{
+			elevator.body.lock_doors = 1;
+			elevator.body maps/mp/zm_highrise_elevators::perkelevatordoor(0);
+		}
+	}
+}
+
+init_divetonuke() //checked matches cerberus output
+{
+	level.zombiemode_divetonuke_perk_func = ::divetonuke_explode;
+	set_zombie_var( "zombie_perk_divetonuke_radius", 300 );
+	set_zombie_var( "zombie_perk_divetonuke_min_damage", 1000 );
+	set_zombie_var( "zombie_perk_divetonuke_max_damage", 5000 );
+}
+
+divetonuke_explode( attacker, origin )
+{
+	radius = level.zombie_vars[ "zombie_perk_divetonuke_radius" ];
+	min_damage = level.zombie_vars[ "zombie_perk_divetonuke_min_damage" ];
+	max_damage = level.zombie_vars[ "zombie_perk_divetonuke_max_damage" ];
+	radiusdamage( origin, radius, max_damage, min_damage, attacker, "MOD_GRENADE_SPLASH" );
+	attacker playsound( "zmb_phdflop_explo" );
+	fx = loadfx("explosions/fx_default_explosion");
+	playfx( fx, origin );
+}
+
+divetonuke_perk_machine_setup( use_trigger, perk_machine, bump_trigger, collision ) //checked matches cerberus output
+{
+	use_trigger.script_sound = "mus_perks_phd_jingle";
+	use_trigger.script_string = "divetonuke_perk";
+	use_trigger.script_label = "mus_perks_phd_sting";
+	use_trigger.target = "vending_divetonuke";
+	perk_machine.script_string = "divetonuke_perk";
+	perk_machine.targetname = "vending_divetonuke";
+	if ( isDefined( bump_trigger ) )
+	{
+		bump_trigger.script_string = "divetonuke_perk";
+	}
+}
+
+divetonuke_perk_machine_think() //checked changed to match cerberus output
+{
+	init_divetonuke();
+	while ( 1 )
+	{
+		machine = getentarray( "vending_divetonuke", "targetname" );
+		machine_triggers = getentarray( "vending_divetonuke", "target" );
+		for ( i = 0; i < machine.size; i++ )
+		{
+			machine[ i ] setmodel( level.machine_assets[ "divetonuke" ].off_model );
+		}
+		array_thread( machine_triggers, ::set_power_on, 0 );
+		level thread do_initial_power_off_callback( machine, "divetonuke" );
+		level waittill( "divetonuke_on" );
+		for ( i = 0; i < machine.size; i++ )
+		{
+			machine[ i ] setmodel( level.machine_assets[ "divetonuke" ].on_model );
+			machine[ i ] vibrate( vectorScale( ( 0, -1, 0 ), 100 ), 0.3, 0.4, 3 );
+			machine[ i ] playsound( "zmb_perks_power_on" );
+			machine[ i ] thread perk_fx( "divetonuke_light" );
+			machine[ i ] thread play_loop_on_machine();
+		}
+		level notify( "specialty_flakjacket_power_on" );
+		array_thread( machine_triggers, ::set_power_on, 1 );
+		if ( isDefined( level.machine_assets[ "divetonuke" ].power_on_callback ) )
+		{
+			array_thread( machine, level.machine_assets[ "divetonuke" ].power_on_callback );
+		}
+		level waittill( "divetonuke_off" );
+		if ( isDefined( level.machine_assets[ "divetonuke" ].power_off_callback ) )
+		{
+			array_thread( machine, level.machine_assets[ "divetonuke" ].power_off_callback );
+		}
+		array_thread( machine, ::turn_perk_off );
+	}
 }
 
 custom_vending_precaching() //changed at own discretion
@@ -303,16 +389,12 @@ custom_vending_precaching() //changed at own discretion
 	}
 	if ( is_true( level.zombiemode_using_divetonuke_perk ) )
 	{
-		precacheitem( "zombie_perk_bottle_nuke" );
 		precacheshader( "specialty_divetonuke_zombies" );
-		precachemodel( "zombie_vending_nuke" );
-		precachemodel( "zombie_vending_nuke_on" );
-		precachestring( &"ZOMBIE_PERK_DIVETONUKE" );
-		level._effect[ "divetonuke_light" ] = loadfx( "misc/fx_zombie_cola_dtap_on" );
+		precachemodel( "zombie_vending_nuke_on_lo" );
 		level.machine_assets[ "divetonuke" ] = spawnstruct();
-		level.machine_assets[ "divetonuke" ].weapon = "zombie_perk_bottle_nuke";
-		level.machine_assets[ "divetonuke" ].off_model = "zombie_vending_nuke";
-		level.machine_assets[ "divetonuke" ].on_model = "zombie_vending_nuke_on";
+		level.machine_assets[ "divetonuke" ].weapon = "zombie_perk_bottle_jugg";
+		level.machine_assets[ "divetonuke" ].off_model = "zombie_vending_nuke_on_lo";
+		level.machine_assets[ "divetonuke" ].on_model = "zombie_vending_nuke_on_lo";
 	}
 	if ( is_true( level.zombiemode_using_doubletap_perk ) )
 	{
@@ -564,7 +646,8 @@ setup_leapers() //checked matches cerberus output dvar not found
 	}
 	else
 	{
-		maps/mp/zombies/_zm_ai_leaper::enable_leaper_rounds();
+		if(isdefined(level.customMap) && level.customMap == "vanilla")
+			maps/mp/zombies/_zm_ai_leaper::enable_leaper_rounds();
 	}
 	level.leapers_per_player = 6;
 }
@@ -856,7 +939,7 @@ custom_add_weapons() //checked partially changed to match cerberus output change
 	add_zombie_weapon( "knife_ballistic_bowie_zm", "knife_ballistic_bowie_upgraded_zm", &"ZOMBIE_WEAPON_KNIFE_BALLISTIC", 10, "sickle", "", undefined, 1 );
 	add_zombie_weapon( "knife_ballistic_no_melee_zm", "knife_ballistic_no_melee_upgraded_zm", &"ZOMBIE_WEAPON_KNIFE_BALLISTIC", 10, "wpck_knife", "", undefined );
 	add_zombie_weapon( "tazer_knuckles_zm", undefined, &"ZOMBIE_WEAPON_TAZER_KNUCKLES", 100, "tazerknuckles", "", undefined );
-	add_zombie_weapon( "slipgun_zm", undefined, &"ZOMBIE_WEAPON_SLIPGUN", 10, "slip", "", undefined );
+	add_zombie_weapon( "slipgun_zm", "slipgun_upgraded_zm", &"ZOMBIE_WEAPON_SLIPGUN", 10, "slip", "", undefined );
 	if ( is_true( level.raygun2_included ) )
 	{
 		add_zombie_weapon( "raygun_mark2_zm", "raygun_mark2_upgraded_zm", &"ZOMBIE_WEAPON_RAYGUN_MARK2", 10000, "raygun_mark2", "", undefined );
@@ -1851,4 +1934,44 @@ highrise_special_weapon_magicbox_check(weapon)
 		}
 	}
 	return 1;
+}
+
+override_zombie_count() //custom function
+{
+	level endon( "end_game" );
+	level.speed_change_round = undefined;
+	thread increase_zombie_speed();
+	for ( ;; )
+	{
+		level waittill_any( "start_of_round", "intermission", "check_count" );
+		if ( isdefined(level.customMap) && level.customMap == "redroom" )
+		{
+			if ( level.round_number <= 2 )
+			{
+				level.zombie_move_speed = 20;
+			}
+		}
+	}
+}
+
+increase_zombie_speed()
+{
+	if ( isdefined(level.customMap) && level.customMap != "redroom" )
+	{
+		return;
+	}
+	while ( 1 )
+	{
+		zombies = get_round_enemy_array();
+		for ( i = 0; i < zombies.size; i++ )
+		{
+			zombies[ i ].closestPlayer = get_closest_valid_player( zombies[ i ].origin );
+		}
+		zombies = get_round_enemy_array();
+		for ( i = 0; i < zombies.size; i++ )
+		{
+			zombies[ i ] set_zombie_run_cycle( "sprint" );
+		}
+		wait 1;
+	}
 }
