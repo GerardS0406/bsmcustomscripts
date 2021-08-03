@@ -11,8 +11,16 @@
 #include common_scripts/utility;
 #include maps/mp/zombies/_zm_magicbox_lock;
 
-init() //checked matches cerberus output
+init() //modified function
 {
+	//begin debug code
+	level.custom_zm_magicbox_loaded = 1;
+	maps/mp/zombies/_zm_bot::init();
+	if ( !isDefined( level.debugLogging_zm_magicbox ) )
+	{
+		level.debugLogging_zm_magicbox = 0;
+	}
+	//end debug code
 	if ( !isDefined( level.chest_joker_model ) )
 	{
 		level.chest_joker_model = "zombie_teddybear";
@@ -23,14 +31,240 @@ init() //checked matches cerberus output
 	{
 		level.magic_box_zbarrier_state_func = ::process_magic_box_zbarrier_state;
 	}
-	if ( is_true( level.using_locked_magicbox ) )
+	
+	if ( isDefined( level.using_locked_magicbox ) && level.using_locked_magicbox )
 	{
 		maps/mp/zombies/_zm_magicbox_lock::init();
 	}
 	if ( is_classic() )
 	{
 		level.chests = getstructarray( "treasure_chest_use", "targetname" );
-		treasure_chest_init( "start_chest" );
+		normalChests = level.chests;
+
+		foreach(chest in normalChests)
+		{
+			logprint(chest.script_noteworthy +"\n");
+		}
+		if (isDefined(level.customMap) && level.customMap == "tunnel" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( -11090, -349, 193 );
+			start_chest.angles = ( 0, -100, 0 );
+			start_chest.script_noteworthy = "start_chest";
+			start_chest.zombie_cost = 950;
+			start_chest2 = spawnstruct();
+			start_chest2.origin = ( -11772, -2501, 232 );
+			start_chest2.angles = ( 0, 90, 0 );
+			start_chest2.script_noteworthy = "farm_chest";
+			start_chest2.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			level.chests[ 1 ] = start_chest2;
+			randy = RandomIntRange(0,3);
+			if ( randy == 1 )
+				treasure_chest_init( "start_chest" );
+			else
+				treasure_chest_init( "farm_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "cornfield" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 13566, -541, -188 );
+			start_chest.angles = ( 0, -90, 0 );
+			start_chest.script_noteworthy = "start_chest";
+			start_chest.zombie_cost = 950;
+			start_chest2 = spawnstruct();
+			start_chest2.origin = ( 7458, -464, -196 );
+			start_chest2.angles = ( 0, -90, 0 );
+			start_chest2.script_noteworthy = "depot_chest";
+			start_chest2.zombie_cost = 950;
+			start_chest3 = spawnstruct();
+			start_chest3.origin = ( 10158, 49, -220 );
+			start_chest3.angles = ( 0, -185, 0 );
+			start_chest3.script_noteworthy = "farm_chest";
+			start_chest3.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			level.chests[ 1 ] = start_chest2;
+			level.chests[ 2 ] = start_chest3;
+			randy = RandomIntRange(0,3);
+			if ( randy == 1 )
+				treasure_chest_init( "start_chest" );
+			else if ( randy == 2 )
+				treasure_chest_init( "farm_chest" );
+			else
+				treasure_chest_init( "depot_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "house" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 5387, 6594, -24 );
+			start_chest.angles = ( 0, 90, 0 );
+			start_chest.script_noteworthy = "start_chest";
+			start_chest.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			treasure_chest_init( "start_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "power" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 10806, 8518, -407 );
+			start_chest.angles = ( 0, 180, 0 );
+			start_chest.script_noteworthy = "depot_chest";
+			start_chest.zombie_cost = 950;
+			level.chests[ 0 ] = normalChests[ 2 ];
+			level.chests[ 1 ] = start_chest;
+			randy = RandomIntRange(0,2);
+			if ( randy == 1 )
+				treasure_chest_init( "pow_chest" );
+			else
+				treasure_chest_init( "depot_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "diner" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( -5708, -7968, 232 );
+			start_chest.angles = ( 0, 1, 0 );
+			start_chest.script_noteworthy = "depot_chest";
+			start_chest.zombie_cost = 950;
+			level.chests[ 0 ] = normalChests[ 3 ];
+			level.chests[ 1 ] = start_chest;
+			randy = RandomIntRange(0,3);
+			if ( randy == 1 )
+				treasure_chest_init( "start_chest" );
+			else
+				treasure_chest_init( "depot_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "docks")
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( -423.33, 6952, 64.125 );
+			start_chest.angles = ( 0, 10, 0 );
+			start_chest.script_noteworthy = "start_chest";
+			start_chest.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			level.chests[ 1 ] = normalChests[ 3 ];
+			treasure_chest_init("start_chest");
+		}
+		else if (isDefined(level.customMap) && level.customMap == "cellblock")
+		{
+			level.chests = [];
+			level.chests[ 0 ] = normalChests[ 0 ];
+			level.chests[ 1 ] = normalChests[ 1 ];
+			treasure_chest_init("start_chest");
+		}
+		else if (isDefined(level.customMap) && level.customMap == "rooftop")
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 2249, 9869.5, 1704.1 );
+			start_chest.angles = ( 0, -90, 0 );
+			start_chest.script_noteworthy = "start_chest";
+			start_chest.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			level.chests[ 1 ] = normalChests[ 2 ];
+			randy = RandomIntRange(0,3);
+			if ( randy == 1 )
+				treasure_chest_init( "start_chest" );
+			else
+				treasure_chest_init( "roof_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "building1top" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 1608.58, 1053.19, 3221.79 );
+			start_chest.angles = ( 0, 0, 0 );
+			start_chest.script_noteworthy = "ob6_chest";
+			start_chest.zombie_cost = 950;
+			start_chest2 = spawnstruct();
+			start_chest2.origin = (2177.11, 2416.36, 3040.13);
+			start_chest2.angles = ( 0, 180, 0 );
+			start_chest2.script_noteworthy = "start_chest";
+			start_chest2.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			level.chests[ 1 ] = start_chest2;
+			treasure_chest_init( "start_chest" );
+		}
+		else if (isDefined(level.customMap) && level.customMap == "redroom" )
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 3731.95, 1817.7, 1430.5 );
+			start_chest.angles = ( 0, 90, 0 );
+			start_chest.script_noteworthy = "start_chest";
+			start_chest.zombie_cost = 950;
+			start_chest2 = spawnstruct();
+			start_chest2.origin = ( 2825.45, 1861.31, 1402 );
+			start_chest2.angles = ( 12.5, 180, 0 );
+			start_chest2.script_noteworthy = "gb1_chest";
+			start_chest2.zombie_cost = 950;
+			level.chests[ 0 ] = start_chest;
+			level.chests[ 1 ] = start_chest2;
+			treasure_chest_init( "start_chest" );
+		}
+		else if(isdefined(level.customMap) && level.customMap == "maze")
+		{
+			level.chests = [];
+			level.chests[ 0 ] = normalChests[4];
+			level.chests[ 1 ] = normalChests[5];
+			randy = RandomIntRange(0,2);
+			if(randy == 0)
+				treasure_chest_init("maze_chest1");
+			else if(randy == 1)
+				treasure_chest_init("maze_chest2");
+		}
+		else if(isdefined(level.customMap) && level.customMap == "trenches")
+		{
+			level.chests = [];
+			level.chests[0] = normalChests[0];
+			level.chests[1] = normalChests[1];
+			level.chests[2] = normalChests[2];
+			treasure_chest_init("bunker_start_chest");
+		}
+		else if(isdefined(level.customMap) && level.customMap == "crazyplace")
+		{
+			level.chests = [];
+			start_chest = spawnstruct();
+			start_chest.origin = ( 9615, -8120, -464 );
+			start_chest.angles = ( 0, 125, 0 );
+			start_chest.script_noteworthy = "bunker_start_chest";
+			start_chest.zombie_cost = 950;
+			start_chest2 = spawnstruct();
+			start_chest2.origin = (10191, -7145, -464);
+			start_chest2.angles = ( 0, 0, 0 );
+			start_chest2.script_noteworthy = "bunker_tank_chest";
+			start_chest2.zombie_cost = 950;
+			level.chests[0] = start_chest;
+			level.chests[1] = start_chest2;
+			treasure_chest_init("bunker_start_chest");
+		}
+		else
+		{
+			logprint("why?" + "\n");
+			treasure_chest_init( "start_chest" );
+		}
+	}
+	else
+	{
+		if(getDvar("customMap") == "farm" )
+		{
+			chest1 = getstruct( "farm_chest", "script_noteworthy" );
+			level.chests = [];
+			level.chests[ level.chests.size ] = chest1;
+			treasure_chest_init( "farm_chest" );
+		}
+		else if(getDvar("customMap") == "busdepot" )
+		{
+			chest1 = getstruct( "depot_chest", "script_noteworthy" );
+			level.chests = [];
+			level.chests[ level.chests.size ] = chest1;
+			maps/mp/zombies/_zm_magicbox::treasure_chest_init( "depot_chest" );
+		}
 	}
 	if ( level.createfx_enabled )
 	{
@@ -106,45 +340,42 @@ init_starting_chest_location( start_chest_name ) //checked changed to match cerb
 			level.chests[ level.chest_index ].zbarrier set_magic_box_zbarrier_state( "initial" );
 		}
 	}
-	else
+	i = 0;
+	while ( i < level.chests.size )
 	{
-		for ( i = 0; i < level.chests.size; i++ )
+		if ( isdefined( level.random_pandora_box_start ) && level.random_pandora_box_start == 1 )
 		{
-			if ( isdefined( level.random_pandora_box_start ) && level.random_pandora_box_start == 1 )
+			if ( start_chest_found || isdefined(level.chests[ i ].start_exclude ) && level.chests[ i ].start_exclude == 1 )
 			{
-				if ( start_chest_found || isdefined( level.chests[ i ].start_exclude ) && level.chests[ i ].start_exclude == 1 )
-				{
-					level.chests[ i ] hide_chest();
-				}
-				else
-				{
-					level.chest_index = i;
-					level.chests[ level.chest_index].hidden = 0;
-					if ( isdefined( level.chests[ level.chest_index ].zbarrier ) )
-					{
-						level.chests[ level.chest_index ].zbarrier set_magic_box_zbarrier_state( "initial" );
-					}
-					start_chest_found = 1;
-				}
+				level.chests[ i ] hide_chest();
 			}
 			else
 			{
-				if ( start_chest_found || !isdefined(level.chests[ i ].script_noteworthy) || !issubstr( level.chests[ i ].script_noteworthy, start_chest_name ) )
+				level.chest_index = i;
+				level.chests[ level.chest_index].hidden = 0;
+				if ( isdefined( level.chests[ level.chest_index ].zbarrier ) )
 				{
-					level.chests[ i ] hide_chest();
+					level.chests[level.chest_index].zbarrier set_magic_box_zbarrier_state("initial");
 				}
-				else
-				{
-					level.chest_index = i;
-					level.chests[ level.chest_index ].hidden = 0;
-					if ( isdefined( level.chests[ level.chest_index ].zbarrier ) )
-					{
-						level.chests[ level.chest_index ].zbarrier set_magic_box_zbarrier_state( "initial" );
-					}
-					start_chest_found = 1;
-				}
+				start_chest_found = 1;
 			}
+			i++;
+			continue;
 		}
+		if ( start_chest_found || !isdefined(level.chests[ i ].script_noteworthy) || !issubstr( level.chests[ i ].script_noteworthy, start_chest_name ) )
+		{
+			level.chests[i] hide_chest();
+			i++;
+			continue;
+		}
+		level.chest_index = i;
+		level.chests[ level.chest_index ].hidden = 0;
+		if ( isdefined( level.chests[ level.chest_index ].zbarrier ) )
+		{
+			level.chests[ level.chest_index ].zbarrier set_magic_box_zbarrier_state( "initial" );
+		}
+		i++;
+		start_chest_found = 1;
 	}
 	if ( !isdefined( level.pandora_show_func ) )
 	{
@@ -158,9 +389,149 @@ set_treasure_chest_cost( cost ) //checked matches cerberus output
 	level.zombie_treasure_chest_cost = cost;
 }
 
-get_chest_pieces() //checked changed to match cerberus output
+get_chest_pieces() //modified function
 {
 	self.chest_box = getent( self.script_noteworthy + "_zbarrier", "script_noteworthy" );
+	if ( isDefined( level.customMap ) && level.customMap == "building1top" && self.script_noteworthy == "ob6_chest" )
+	{
+		self.chest_box.origin = (1608.58, 1053.19, 3221.79);
+		self.chest_box.angles = (0, 0, 0);
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "building1top" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = (2177.11, 2416.36, 3040.13);
+		self.chest_box.angles = (0, 180, 0);
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "redroom" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( 3731.95, 1817.7, 1430.5 );
+		self.chest_box.angles = ( 0, 90, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "redroom" && self.script_noteworthy == "gb1_chest" )
+	{
+		self.chest_box.origin = ( 2825.45, 1861.31, 1402 );
+		self.chest_box.angles = ( 12.5, 180, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "docks" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( -423.33, 6952, 64.125 );
+		self.chest_box.angles = ( 0, 10, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "rooftop" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( 2249, 9869.5, 1704.1 );
+		self.chest_box.angles = ( 0, -90, 0 );
+	}
+	if ( isdefined( level.customMap ) && level.customMap == "crazyplace" && self.script_noteworthy == "bunker_start_chest" )
+	{
+		self.chest_box.origin = ( 9615, -8120, -464 );
+		self.chest_box.angles = ( 0, 125, 0 );
+	}
+	if ( isdefined( level.customMap ) && level.customMap == "crazyplace" && self.script_noteworthy == "bunker_tank_chest" )
+	{
+		self.chest_box.origin = (10191, -7145, -464);
+		self.chest_box.angles = ( 0, 0, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "tunnel" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( -11090, -349, 195 );
+		self.chest_box.angles = ( 0, -100, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "tunnel" && self.script_noteworthy == "farm_chest" )
+	{
+		self.chest_box.origin = ( -11772, -2501, 229 );
+		self.chest_box.angles = ( 0, 0, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "diner" && self.script_noteworthy == "depot_chest" )
+	{
+		self.chest_box.origin = ( -5708, -7968, 229 );
+		self.chest_box.angles = ( 0, 1, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "power" && self.script_noteworthy == "depot_chest" )
+	{
+		self.chest_box.origin = ( 10806, 8518, -407 );
+		self.chest_box.angles = ( 0, 180, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "cornfield" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( 13566, -541, -188 );
+		self.chest_box.angles = ( 0, -90, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "cornfield" && self.script_noteworthy == "depot_chest" )
+	{
+		self.chest_box.origin = ( 7458, -464, -196 );
+		self.chest_box.angles = ( 0, -90, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "cornfield" && self.script_noteworthy == "farm_chest" )
+	{
+		self.chest_box.origin = ( 10158, 49, -220 );
+		self.chest_box.angles = ( 0, -185, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "house" && self.script_noteworthy == "start_chest" )
+	{
+		self.chest_box.origin = ( 5387, 6594, -24 );
+		self.chest_box.angles = ( 0, 90, 0 );
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "tunnel" && self.script_noteworthy == "start_chest" )
+	{
+		collision = spawn( "script_model", self.chest_box.origin );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin - ( 4, 30, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin + ( 4, 30, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+	}
+	else if ( isDefined( level.customMap ) && level.customMap == "tunnel" && self.script_noteworthy == "farm_chest" )
+	{
+		collision = spawn( "script_model", self.chest_box.origin );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin - ( 36, 0, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin + ( 36, 0, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+	}
+	else if ( self.chest_box.angles == ( 0, 92, 0 ) || self.chest_box.angles == ( 0, 90, 0 ) || self.chest_box.angles == ( 0, -90, 0 ) )
+	{
+		collision = spawn( "script_model", self.chest_box.origin );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin - ( 0, 32, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin + ( 0, 32, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+	}
+	else if ( self.chest_box.angles == ( 0, 10, 0 ) || self.chest_box.angles == ( 0, 1, 0 ) || self.chest_box.angles == ( 0, 0, 0 ) || self.chest_box.angles == ( 0, 180, 0 ) || self.chest_box.angles == ( 0, -180, 0 ) || self.chest_box.angles == ( 0, -185, 0 ) )
+	{
+		collision = spawn( "script_model", self.chest_box.origin );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin - ( 32, 0, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+		collision = spawn( "script_model", self.chest_box.origin + ( 32, 0, 0 ) );
+		collision.angles = self.chest_box.angles;
+		collision setmodel( "collision_clip_32x32x128" );
+		collision disconnectpaths();
+	}
 	self.chest_rubble = [];
 	rubble = getentarray( self.script_noteworthy + "_rubble", "script_noteworthy" );
 	for ( i = 0; i < rubble.size; i++ )
@@ -177,12 +548,12 @@ get_chest_pieces() //checked changed to match cerberus output
 		self.zbarrier zbarrierpieceuseboxriselogic( 4 );
 	}
 	self.unitrigger_stub = spawnstruct();
-	self.unitrigger_stub.origin = self.origin + ( anglesToRight( self.angles ) * -22.5 );
+	self.unitrigger_stub.origin = self.origin + anglesToRight( self.angles * -22.5 );
 	self.unitrigger_stub.angles = self.angles;
 	self.unitrigger_stub.script_unitrigger_type = "unitrigger_box_use";
 	self.unitrigger_stub.script_width = 104;
-	self.unitrigger_stub.script_height = 50;
-	self.unitrigger_stub.script_length = 45;
+	self.unitrigger_stub.script_height = 60;
+	self.unitrigger_stub.script_length = 60;
 	self.unitrigger_stub.trigger_target = self;
 	unitrigger_force_per_player_triggers( self.unitrigger_stub, 1 );
 	self.unitrigger_stub.prompt_and_visibility_func = ::boxtrigger_update_prompt;
@@ -214,7 +585,7 @@ boxstub_update_prompt( player ) //checked matches cerberus output
 		return 0;
 	}
 	self.hint_parm1 = undefined;
-	if ( is_true( self.stub.trigger_target.grab_weapon_hint ) )
+	if ( isDefined( self.stub.trigger_target.grab_weapon_hint ) && self.stub.trigger_target.grab_weapon_hint )
 	{
 		if ( isDefined( level.magic_box_check_equipment ) && [[ level.magic_box_check_equipment ]]( self.stub.trigger_target.grab_weapon_name ) )
 		{
@@ -225,7 +596,7 @@ boxstub_update_prompt( player ) //checked matches cerberus output
 			self.hint_string = &"ZOMBIE_TRADE_WEAPON";
 		}
 	}
-	else if ( is_true( level.using_locked_magicbox ) && is_true( self.stub.trigger_target.is_locked ) )
+	else if ( isDefined( level.using_locked_magicbox ) && level.using_locked_magicbox && isDefined( self.stub.trigger_target.is_locked ) && self.stub.trigger_target.is_locked )
 	{
 		self.hint_string = get_hint_string( self, "locked_magic_box_cost" );
 	}
@@ -325,7 +696,7 @@ hide_chest( doboxleave ) //checked matches cerberus output
 	}
 	if ( isDefined( self.zbarrier ) )
 	{
-		if ( is_true( doboxleave ) )
+		if ( isDefined( doboxleave ) && doboxleave )
 		{
 			self thread hide_chest_sound_thread();
 			level thread leaderdialog( "boxmove" );
@@ -355,7 +726,7 @@ default_pandora_fx_func() //checked partially changed to match cerberus output
 	self.pandora_light = spawn( "script_model", self.zbarrier.origin );
 	self.pandora_light.angles = self.zbarrier.angles + vectorScale( ( -1, 0, -1 ), 90 );
 	self.pandora_light setmodel( "tag_origin" );
-	if ( !is_true( level._box_initialized ) )
+	if ( isDefined( level._box_initialized ) && !level._box_initialized )
 	{
 		flag_wait( "start_zombie_round_logic" );
 		level._box_initialized = 1;
@@ -422,7 +793,7 @@ treasure_chest_think() //checked changed to match cerberus output
 			wait 0.1;
 			continue;
 		}
-		if ( is_true( self.disabled ) )
+		if ( isdefined( self.disabled ) && self.disabled )
 		{
 			wait 0.1;
 			continue;
@@ -437,7 +808,7 @@ treasure_chest_think() //checked changed to match cerberus output
 		{
 			reduced_cost = int( self.zombie_cost / 2 );
 		}
-		if ( is_true( level.using_locked_magicbox ) && is_true( self.is_locked ) ) 
+		if ( isdefined( level.using_locked_magicbox ) && level.using_locked_magicbox && isdefined( self.is_locked ) && self.is_locked ) 
 		{
 			if ( user.score >= level.locked_magic_box_cost )
 			{
@@ -498,13 +869,13 @@ treasure_chest_think() //checked changed to match cerberus output
 		user thread [[ level._magic_box_used_vo ]]();
 	}
 	self thread watch_for_emp_close();
-	if ( is_true( level.using_locked_magicbox ) )
+	if ( isDefined( level.using_locked_magicbox ) && level.using_locked_magicbox )
 	{
 		self thread maps/mp/zombies/_zm_magicbox_lock::watch_for_lock();
 	}
 	self._box_open = 1;
 	self._box_opened_by_fire_sale = 0;
-	if ( is_true( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] ) && !isDefined( self.auto_open ) && self [[ level._zombiemode_check_firesale_loc_valid_func ]]() )
+	if ( isDefined( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] ) && level.zombie_vars[ "zombie_powerup_fire_sale_on" ] && !isDefined( self.auto_open ) && self [[ level._zombiemode_check_firesale_loc_valid_func ]]() )
 	{
 		self._box_opened_by_fire_sale = 1;
 	}
@@ -542,18 +913,18 @@ treasure_chest_think() //checked changed to match cerberus output
 		{
 			self thread treasure_chest_timeout();
 		}
-		while ( !is_true( self.closed_by_emp ) )
+		while ( isDefined( self.closed_by_emp ) && !self.closed_by_emp )
 		{
 			self waittill( "trigger", grabber );
 			self.weapon_out = undefined;
-			if ( is_true( level.magic_box_grab_by_anyone ) )
+			if ( isDefined( level.magic_box_grab_by_anyone ) && level.magic_box_grab_by_anyone )
 			{
 				if ( isplayer( grabber ) )
 				{
 					user = grabber;
 				}
 			}
-			if ( is_true( level.pers_upgrade_box_weapon ) )
+			if ( isDefined( level.pers_upgrade_box_weapon ) && level.pers_upgrade_box_weapon )
 			{
 				self maps/mp/zombies/_zm_pers_upgrades_functions::pers_upgrade_box_weapon_used( user, grabber );
 			}
@@ -567,7 +938,7 @@ treasure_chest_think() //checked changed to match cerberus output
 				wait 0.1;
 				continue;
 			}
-			if ( grabber != level && is_true( self.box_rerespun ) )
+			if ( grabber != level && isDefined( self.box_rerespun ) && self.box_rerespun )
 			{
 				user = grabber;
 			}
@@ -605,7 +976,7 @@ treasure_chest_think() //checked changed to match cerberus output
 		}
 		self.grab_weapon_hint = 0;
 		self.zbarrier notify( "weapon_grabbed" );
-		if ( !is_true( self._box_opened_by_fire_sale ) )
+		if ( isDefined( self._box_opened_by_fire_sale ) && !self._box_opened_by_fire_sale )
 		{
 			level.chest_accessed += 1;
 		}
@@ -633,7 +1004,7 @@ treasure_chest_think() //checked changed to match cerberus output
 		{
 			wait 3;
 		}
-		if ( is_true( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] ) || self [[ level._zombiemode_check_firesale_loc_valid_func ]]() || self == level.chests[ level.chest_index ] )
+		if ( isDefined( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] ) && level.zombie_vars[ "zombie_powerup_fire_sale_on" ] || self [[ level._zombiemode_check_firesale_loc_valid_func ]]() || self == level.chests[ level.chest_index ] )
 		{
 			thread maps/mp/zombies/_zm_unitrigger::register_static_unitrigger( self.unitrigger_stub, ::magicbox_unitrigger_think );
 		}
@@ -684,7 +1055,7 @@ watch_for_emp_close() //checked changed to match cerberus output
 		}
 	}
 	wait 0.1;
-	self notify( "trigger", level );
+	self notify( "trigger" );
 }
 
 can_buy_weapon() //checked matches cerberus output
@@ -809,7 +1180,7 @@ fire_sale_fix() //checked matches cerberus output
 		self.unitrigger_stub unitrigger_set_hint_string( self, "default_treasure_chest", self.zombie_cost );
 		wait_network_frame();
 		level waittill( "fire_sale_off" );
-		while ( is_true( self._box_open ) )
+		while ( isDefined( self._box_open ) && self._box_open )
 		{
 			wait 0.1;
 		}
@@ -1030,6 +1401,7 @@ decide_hide_show_hint( endon_notify, second_endon_notify, onlyplayer ) //checked
 			{
 				self setvisibletoplayer( self.chest_user );
 			}
+			break;
 		}
 		if ( isDefined( onlyplayer ) )
 		{
@@ -1041,6 +1413,7 @@ decide_hide_show_hint( endon_notify, second_endon_notify, onlyplayer ) //checked
 			{
 				self setinvisibletoplayer( onlyplayer, 1 );
 			}
+			break;
 		}
 		players = get_players();
 		i = 0;
@@ -1105,7 +1478,7 @@ clean_up_hacked_box() //checked matches cerberus output
 
 treasure_chest_weapon_spawn( chest, player, respin ) //checked changed to match cerberus output
 {
-	if ( is_true( level.using_locked_magicbox ) )
+	if ( isDefined( level.using_locked_magicbox ) && level.using_locked_magicbox )
 	{
 		self.owner endon( "box_locked" );
 		self thread maps/mp/zombies/_zm_magicbox_lock::clean_up_locked_box();
@@ -1132,31 +1505,38 @@ treasure_chest_weapon_spawn( chest, player, respin ) //checked changed to match 
 			chest.zbarrier thread magic_box_do_weapon_rise();
 		}
 	}
-	for ( i = 0; i < number_cycles; i++ )
+	i = 0;
+	while ( i < number_cycles )
 	{
-
 		if ( i < 20 )
 		{
-			wait 0.05 ; 
+			wait 0.05;
+			i++;
+			continue;
 		}
-		else if ( i < 30 )
+		if ( i < 30 )
 		{
-			wait 0.1 ; 
+			wait 0.1;
+			i++;
+			continue;
 		}
-		else if ( i < 35 )
+		if ( i < 35 )
 		{
-			wait 0.2 ; 
+			wait 0.2;
+			i++;
+			continue;
 		}
-		else if ( i < 38 )
+		if ( i < 40 )
 		{
-			wait 0.3 ; 
+			wait 0.15;
+			i++;
 		}
 	}
 	if ( isDefined( level.custom_magic_box_weapon_wait ) )
 	{
 		[[ level.custom_magic_box_weapon_wait ]]();
 	}
-	if ( is_true( player.pers_upgrades_awarded[ "box_weapon" ] ) )
+	if ( isDefined( player.pers_upgrades_awarded[ "box_weapon" ] ) && player.pers_upgrades_awarded[ "box_weapon" ] )
 	{
 		rand = maps/mp/zombies/_zm_pers_upgrades_functions::pers_treasure_chest_choosespecialweapon( player );
 	}
@@ -1181,7 +1561,7 @@ treasure_chest_weapon_spawn( chest, player, respin ) //checked changed to match 
 	{
 		self.weapon_model_dw = spawn_weapon_model( rand, get_left_hand_weapon_model_name( rand ), self.weapon_model.origin - vectorScale( ( 0, 1, 0 ), 3 ), self.weapon_model.angles );
 	}
-	if ( getDvar( "magic_chest_movable" ) == "1" && !is_true( chest._box_opened_by_fire_sale ) && !is_true( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] ) && self [[ level._zombiemode_check_firesale_loc_valid_func ]]() )
+	if ( getDvar( "magic_chest_movable" ) == "1" && isDefined( chest._box_opened_by_fire_sale ) && !chest._box_opened_by_fire_sale && isDefined( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] ) && !level.zombie_vars[ "zombie_powerup_fire_sale_on" ] && self [[ level._zombiemode_check_firesale_loc_valid_func ]]() )
 	{
 		random = randomint( 100 );
 		if ( !isDefined( level.chest_min_move_usage ) )
@@ -1613,8 +1993,3 @@ magicbox_host_migration() //checked changed to match cerberus output
 		}
 	}
 }
-
-
-
-
-
