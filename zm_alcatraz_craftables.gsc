@@ -33,7 +33,7 @@ include_key_craftable( craftable_name, model_name )
 	part = spawnstruct();
 	part.name = craftable_name;
 	part add_craftable_piece( part_key );
-	part.triggerthink = ::maps/mp/zombies/_zm_craftables::setup_craftable_pieces;
+	part.triggerthink = maps/mp/zombies/_zm_craftables::setup_craftable_pieces;
 	include_craftable( part );
 }
 
@@ -70,19 +70,16 @@ include_craftables()
 	plane_engine = generate_zombie_craftable_piece( craftable_name, "engine", "veh_t6_dlc_zombie_part_engine", 32, 62, 0, undefined, ::onpickup_plane, ::ondrop_plane, ::oncrafted_plane, undefined, "tag_origin", undefined, 3 );
 	plane_steering = generate_zombie_craftable_piece( craftable_name, "steering", "veh_t6_dlc_zombie_part_control", 32, 15, 0, undefined, ::onpickup_plane, ::ondrop_plane, ::oncrafted_plane, undefined, "tag_control_mechanism", undefined, 4 );
 	plane_rigging = generate_zombie_craftable_piece( craftable_name, "rigging", "veh_t6_dlc_zombie_part_rigging", 32, 15, 0, undefined, ::onpickup_plane, ::ondrop_plane, ::oncrafted_plane, undefined, "tag_origin", undefined, 5 );
-	if ( level.is_forever_solo_game )
-	{
-		plane_cloth.is_shared = 1;
-		plane_fueltanks.is_shared = 1;
-		plane_engine.is_shared = 1;
-		plane_steering.is_shared = 1;
-		plane_rigging.is_shared = 1;
-		plane_cloth.client_field_state = undefined;
-		plane_fueltanks.client_field_state = undefined;
-		plane_engine.client_field_state = undefined;
-		plane_steering.client_field_state = undefined;
-		plane_rigging.client_field_state = undefined;
-	}
+	plane_cloth.is_shared = 1;
+	plane_fueltanks.is_shared = 1;
+	plane_engine.is_shared = 1;
+	plane_steering.is_shared = 1;
+	plane_rigging.is_shared = 1;
+	plane_cloth.client_field_state = undefined;
+	plane_fueltanks.client_field_state = undefined;
+	plane_engine.client_field_state = undefined;
+	plane_steering.client_field_state = undefined;
+	plane_rigging.client_field_state = undefined;
 	plane_cloth.pickup_alias = "sidequest_sheets";
 	plane_fueltanks.pickup_alias = "sidequest_oxygen";
 	plane_engine.pickup_alias = "sidequest_engine";
@@ -104,19 +101,16 @@ include_craftables()
 	refuelable_plane_gas3 = generate_zombie_craftable_piece( craftable_name, "fuel3", "accessories_gas_canister_1", 32, 15, 0, undefined, ::onpickup_fuel, ::ondrop_fuel, ::oncrafted_fuel, undefined, undefined, undefined, 8 );
 	refuelable_plane_gas4 = generate_zombie_craftable_piece( craftable_name, "fuel4", "accessories_gas_canister_1", 32, 15, 0, undefined, ::onpickup_fuel, ::ondrop_fuel, ::oncrafted_fuel, undefined, undefined, undefined, 9 );
 	refuelable_plane_gas5 = generate_zombie_craftable_piece( craftable_name, "fuel5", "accessories_gas_canister_1", 32, 15, 0, undefined, ::onpickup_fuel, ::ondrop_fuel, ::oncrafted_fuel, undefined, undefined, undefined, 10 );
-	if ( level.is_forever_solo_game )
-	{
-		refuelable_plane_gas1.is_shared = 1;
-		refuelable_plane_gas2.is_shared = 1;
-		refuelable_plane_gas3.is_shared = 1;
-		refuelable_plane_gas4.is_shared = 1;
-		refuelable_plane_gas5.is_shared = 1;
-		refuelable_plane_gas1.client_field_state = undefined;
-		refuelable_plane_gas2.client_field_state = undefined;
-		refuelable_plane_gas3.client_field_state = undefined;
-		refuelable_plane_gas4.client_field_state = undefined;
-		refuelable_plane_gas5.client_field_state = undefined;
-	}
+	refuelable_plane_gas1.is_shared = 1;
+	refuelable_plane_gas2.is_shared = 1;
+	refuelable_plane_gas3.is_shared = 1;
+	refuelable_plane_gas4.is_shared = 1;
+	refuelable_plane_gas5.is_shared = 1;
+	refuelable_plane_gas1.client_field_state = undefined;
+	refuelable_plane_gas2.client_field_state = undefined;
+	refuelable_plane_gas3.client_field_state = undefined;
+	refuelable_plane_gas4.client_field_state = undefined;
+	refuelable_plane_gas5.client_field_state = undefined;
 	refuelable_plane = spawnstruct();
 	refuelable_plane.name = craftable_name;
 	refuelable_plane add_craftable_piece( refuelable_plane_gas1 );
@@ -510,7 +504,7 @@ roof_nag_vo()
 				if ( isDefined( player ) )
 				{
 					player do_player_general_vox( "quest", "sidequest_roof_nag", undefined, 100 );
-					n_roof_nag_wait *= 1,5;
+					n_roof_nag_wait *= 1.5;
 					n_roof_nag_max_times--;
 
 				}
