@@ -19,6 +19,8 @@
 #include maps/mp/zm_alcatraz_travel;
 #include maps/mp/zm_alcatraz_traps;
 #include maps/mp/zm_alcatraz_distance_tracking;
+#include maps/mp/zm_alcatraz_sq;
+#include maps/mp/zm_alcatraz_craftables;
 #include maps/mp/zombies/_zm_perk_divetonuke;
 #include maps/mp/zombies/_zm_perk_electric_cherry;
 #include maps/mp/gametypes_zm/_spawning;
@@ -36,8 +38,7 @@
 #include maps/mp/zombies/_zm_utility;
 #include maps/mp/_utility;
 #include common_scripts/utility;
-
-//#using_animtree( "fxanim_props" ); //leave commented out for now for compiling
+#include maps/mp/zombies/_zm_afterlife;
 
 gamemode_callback_setup() //checked matches cerberus output
 {
@@ -106,6 +107,25 @@ main() //checked changed to match cerberus output
 	level.zombiemode_using_juggernaut_perk = 1;
 	level.zombiemode_using_sleightofhand_perk = 1;
 	level.zombiemode_using_deadshot_perk = 1;
+	
+	map = level.customMap;
+	if(isDefined(map) && map != "vanilla")
+	{
+		if(isDefined(map) && map != "rooftop")
+		{
+			level.zombiemode_using_marathon_perk = 1;
+			level.zombiemode_using_revive_perk = 1;
+		}
+		level.zombiemode_using_additionalprimaryweapon_perk = 1;
+		level.zombiemode_using_divetonuke_perk = 1;
+		level.phdUsesClientfield = 0;
+		maps/mp/zombies/_zm_perk_divetonuke::enable_divetonuke_perk_for_level();
+	}
+	if ( isDefined(map) && map == "rooftop" )
+	{
+		level.electric_chair_player_thread_custom_func = ::custom_electric_chair_player_thread;
+		level.track_quest_status_thread_custom_func = ::bridge_reset;
+	}
 	if ( maps/mp/zombies/_zm_utility::is_gametype_active( "zclassic" ) )
 	{
 		level.zombiemode_using_electric_cherry_perk = 1;
@@ -222,6 +242,215 @@ main() //checked changed to match cerberus output
 	level thread maps/mp/zm_prison_ffotd::main_end();
 	level thread title_update_main_end();
 	//flag_wait( "start_zombie_round_logic" ); //players can't join if this is uncommented
+	//map = getDvar( "customMap" );
+	if(isDefined(map) && map == "docks")
+	{
+		thread acid_bench( map, (751, 6572, 210), (0,191,0) );
+	}
+	if(isDefined(map) && map != "vanilla")
+	{
+		level thread onplayerconnect();
+		level thread onplayerconnected();
+		level thread map_setup();
+	}
+}
+
+map_setup()
+{
+	map = level.customMap;
+	thread disable_afterlife_boxes();
+	if ( level.script == "zm_prison" && isDefined( map ) && map == "docks" )
+	{
+		thread auto_upgrade_tower();
+		thread disable_gondola();
+		thread disable_doors_docks();
+	}
+	else if ( level.script == "zm_prison" && isDefined( map ) && map == "cellblock" )
+	{
+		thread disable_doors_cellblock();
+	}
+	else if ( level.script == "zm_prison" && isDefined( map ) && map == "rooftop" )
+	{
+		thread disable_doors_cellblock();
+	}
+}
+
+onplayerconnect()
+{
+	level waittill( "connected", player );
+	maps/mp/zombies/_zm_game_module::turn_power_on_and_open_doors();
+	wait 1;
+	flag_set( "power_on" );
+	level setclientfield( "zombie_power_on", 1 );
+	level notify( "sleight_on" );
+	wait_network_frame();
+	level notify( "doubletap_on" );
+	wait_network_frame();
+	level notify( "juggernog_on" );
+	wait_network_frame();
+	level notify( "electric_cherry_on" );
+	wait_network_frame();
+	level notify( "deadshot_on" );
+	wait_network_frame();
+	level notify( "divetonuke_on" );
+	wait_network_frame();
+	level notify( "additionalprimaryweapon_on" );
+	wait_network_frame();
+	level notify( "Pack_A_Punch_on" );
+	wait_network_frame();
+}
+onplayerconnected()
+{
+	for(;;)
+	{
+		level waittill("connected", player);
+		player thread afterlife_doors_close();
+	}
+}
+
+acid_bench(map, origin, angles)
+{
+	level endon("end_game");
+	//level.soulFX = loadfx("fx_alcatraz_soul_charge");
+	level.soulDistance = 400;
+	bench = spawn("script_model", origin);
+	bench SetModel("p6_zm_work_bench");
+	bench.angles = angles;
+	bench.souls = 0;
+	//do these for every map separately
+	if(isDefined(map) && map == "docks")
+	{
+		col = spawn("script_model", (758, 6589, 242));
+		col SetModel("collision_clip_64x64x64");
+		col.angles = angles;
+		col2 = spawn("script_model", (764, 6554, 242));
+		col2 SetModel("collision_clip_64x64x64");
+		col2.angles = angles;
+	}
+	acidGatModel = spawn("script_model", origin + (0,0,45));
+	acidGatModel SetModel("p6_anim_zm_al_packasplat");
+	acidGatModel.angles = angles;
+	trigger = spawn("trigger_radius", origin + (0,0,32), 0, 35, 70);
+	trigger.targetname = "acid_gat_trigger";
+	trigger.angles = angles;
+	trigger SetHintString("This Machine Needs Power");
+	trigger SetCursorHint("HINT_NOICON");
+	thread watchZombies(bench);
+	level waittill("soulsAreDone");
+	wait 2;
+	trigger SetHintString("Hold ^3&&1^7 to convert Blundergat into Acidgat");
+	for(;;)
+	{
+		trigger waittill("trigger", player);
+		if(player UseButtonPressed())
+		{
+			weap = player GetCurrentWeapon();
+			if(weap == "blundergat_zm" || weap == "blundergat_upgraded_zm")
+			{
+				if(weap == "blundergat_zm")
+				{
+					player TakeWeapon("blundergat_zm");
+				}
+				else if(weap == "blundergat_upgraded_zm")
+				{
+					player TakeWeapon("blundergat_upgraded_zm");
+				}
+				trigger SetHintString("Converting...");
+				wait 5;
+				trigger SetHintString("Hold ^3&&1^7 for Acidgat");
+				for(;;)
+				{
+					if(player UseButtonPressed() && Distance(player.origin, trigger.origin) < 65)
+					{
+						if(weap == "blundergat_zm")
+						{
+							player GiveWeapon("blundersplat_zm");
+							player SwitchToWeapon("blundersplat_zm");
+							break;
+						}
+						else if(weap == "blundergat_upgraded_zm")
+						{
+							player GiveWeapon("blundersplat_upgraded_zm");
+							player SwitchToWeapon("blundersplat_upgraded_zm");
+							break;
+						}
+					}
+					wait .1;
+				}
+			}
+		}
+		wait .1;
+		trigger SetHintString("Hold ^3&&1^7 to convert Blundergat into Acidgat");
+	}
+}
+
+watchZombies(bench)
+{
+	level endon("soulsAreDone");
+	while(1)
+	{
+		zombies = GetAiSpeciesArray( "axis", "all" );
+		for(i=0;i<zombies.size;i++)
+		{
+			if(!isdefined(zombies[i].soulChest))
+				zombies[i] thread watchMe(bench);
+		}
+		wait(.05);
+	}
+}
+
+watchMe(bench)
+{
+	level endon("soulsAreDone");
+	self.soulChest = true;
+	//IPrintLn("A zombie has been threaded");
+	self waittill("death");
+	if(!isdefined(self))
+	{
+		return;
+	}
+	start = self.origin + (0,0,45);
+	if(!isdefined(start))
+	{
+		return;
+	}
+	closest = level.soulDistance;
+	newbench = undefined;
+	if(Distance(start, bench.origin) < closest )
+	{
+		closest = Distance(start, bench.origin);
+		newbench = bench;
+	}
+	if(!isDefined(newbench) || !isDefined(newbench.origin))
+	{
+		return;
+	}
+	bench.souls++;
+	//IPrintLn(bench.souls);
+	newbench thread sendSoul(start);
+	if(bench.souls >= 15)
+	{
+		level notify("soulsAreDone");
+	}
+}
+
+sendSoul(start)
+{
+	if(isdefined(self))
+	{
+		end = self.origin + (0,0,45);
+	}
+	if(!isdefined(start) || !isdefined(end))
+	{
+		return;
+	}
+	fxOrg = Spawn("script_model", start);
+	fxOrg SetModel("tag_origin");
+	fx = PlayFxOnTag( level._effect[ "powerup_on" ], fxOrg, "tag_origin" );
+	fxOrg MoveTo(end, 2);
+	wait 2;
+	fx Delete();
+	fxOrg Delete();
 }
 
 title_update_main_start() //checked matches cerberus output
@@ -276,6 +505,7 @@ givecustomloadout( takeallweapons, alreadyspawned )
 
 custom_vending_precaching() //checked changed to match cerberus output
 {
+	precacheshader( "specialty_electric_cherry_zombie" );
 	if ( level._custom_perks.size > 0 )
 	{
 		a_keys = getarraykeys( level._custom_perks );
@@ -310,7 +540,7 @@ custom_vending_precaching() //checked changed to match cerberus output
 		precachestring( &"ZOMBIE_PERK_ADDITIONALWEAPONPERK" );
 		level._effect[ "additionalprimaryweapon_light" ] = loadfx( "maps/zombie_alcatraz/fx_alcatraz_perk_smk" );
 		level.machine_assets[ "additionalprimaryweapon" ] = spawnstruct();
-		level.machine_assets[ "additionalprimaryweapon" ].weapon = "zombie_perk_bottle_additionalprimaryweapon";
+		level.machine_assets[ "additionalprimaryweapon" ].weapon = "zombie_perk_bottle_sleight";
 		level.machine_assets[ "additionalprimaryweapon" ].off_model = "p6_zm_al_vending_three_gun_on";
 		level.machine_assets[ "additionalprimaryweapon" ].on_model = "p6_zm_al_vending_three_gun_on";
 		level.machine_assets[ "additionalprimaryweapon" ].power_on_callback = ::custom_vending_power_on;
@@ -332,13 +562,13 @@ custom_vending_precaching() //checked changed to match cerberus output
 	}
 	if ( isDefined( level.zombiemode_using_divetonuke_perk ) && level.zombiemode_using_divetonuke_perk )
 	{
-		precacheitem( "zombie_perk_bottle_nuke" );
+		//precacheitem( "zombie_perk_bottle_nuke" );
 		precacheshader( "specialty_divetonuke_zombies" );
 		precachemodel( "p6_zm_al_vending_nuke_on" );
-		precachestring( &"ZOMBIE_PERK_DIVETONUKE" );
-		level._effect[ "divetonuke_light" ] = loadfx( "maps/zombie_alcatraz/fx_alcatraz_perk_smk" );
+		//precachestring( &"ZOMBIE_PERK_DIVETONUKE" );
+		//level._effect[ "divetonuke_light" ] = loadfx( "maps/zombie_alcatraz/fx_alcatraz_perk_smk" );
 		level.machine_assets[ "divetonuke" ] = spawnstruct();
-		level.machine_assets[ "divetonuke" ].weapon = "zombie_perk_bottle_nuke";
+		level.machine_assets[ "divetonuke" ].weapon = "zombie_perk_bottle_deadshot";
 		level.machine_assets[ "divetonuke" ].off_model = "p6_zm_al_vending_nuke_on";
 		level.machine_assets[ "divetonuke" ].on_model = "p6_zm_al_vending_nuke_on";
 		level.machine_assets[ "divetonuke" ].power_on_callback = ::custom_vending_power_on;
@@ -374,30 +604,26 @@ custom_vending_precaching() //checked changed to match cerberus output
 	}
 	if ( isDefined( level.zombiemode_using_marathon_perk ) && level.zombiemode_using_marathon_perk )
 	{
-		precacheitem( "zombie_perk_bottle_marathon" );
-		precacheshader( "specialty_marathon_zombies" );
-		precachemodel( "zombie_vending_marathon" );
-		precachemodel( "zombie_vending_marathon_on" );
 		precachestring( &"ZOMBIE_PERK_MARATHON" );
-		level._effect[ "marathon_light" ] = loadfx( "maps/zombie/fx_zmb_cola_staminup_on" );
+		precacheshader("specialty_doublepoints_zombies");
+		//level._effect[ "marathon_light" ] = loadfx( "maps/zombie/fx_alcatraz_perk_smk" );
 		level.machine_assets[ "marathon" ] = spawnstruct();
-		level.machine_assets[ "marathon" ].weapon = "zombie_perk_bottle_marathon";
-		level.machine_assets[ "marathon" ].off_model = "zombie_vending_marathon";
-		level.machine_assets[ "marathon" ].on_model = "zombie_vending_marathon_on";
+		level.machine_assets[ "marathon" ].weapon = "zombie_perk_bottle_doubletap";
+		level.machine_assets[ "marathon" ].off_model = "p6_zm_al_vending_doubletap2_on";
+		level.machine_assets[ "marathon" ].on_model = "p6_zm_al_vending_doubletap2_on";
 	}
 	if ( isDefined( level.zombiemode_using_revive_perk ) && level.zombiemode_using_revive_perk )
 	{
-		precacheitem( "zombie_perk_bottle_revive" );
-		precacheshader( "specialty_quickrevive_zombies" );
-		precachemodel( "zombie_vending_revive" );
-		precachemodel( "zombie_vending_revive_on" );
+		precacheshader( "specialty_instakill_zombies" );
+		//precachemodel( "zombie_vending_revive" );
+		//precachemodel( "zombie_vending_revive_on" );
 		precachestring( &"ZOMBIE_PERK_QUICKREVIVE" );
-		level._effect[ "revive_light" ] = loadfx( "misc/fx_zombie_cola_revive_on" );
-		level._effect[ "revive_light_flicker" ] = loadfx( "maps/zombie/fx_zmb_cola_revive_flicker" );
+		//level._effect[ "revive_light" ] = loadfx( "misc/fx_zombie_cola_revive_on" );
+		//level._effect[ "revive_light_flicker" ] = loadfx( "maps/zombie/fx_zmb_cola_revive_flicker" );
 		level.machine_assets[ "revive" ] = spawnstruct();
-		level.machine_assets[ "revive" ].weapon = "zombie_perk_bottle_revive";
-		level.machine_assets[ "revive" ].off_model = "zombie_vending_revive";
-		level.machine_assets[ "revive" ].on_model = "zombie_vending_revive_on";
+		level.machine_assets[ "revive" ].weapon = "zombie_perk_bottle_cherry";
+		level.machine_assets[ "revive" ].off_model = "p6_zm_vending_electric_cherry_off";
+		level.machine_assets[ "revive" ].on_model = "p6_zm_vending_electric_cherry_on";
 	}
 	if ( isDefined( level.zombiemode_using_sleightofhand_perk ) && level.zombiemode_using_sleightofhand_perk )
 	{
@@ -485,40 +711,83 @@ give_personality_characters() //checked matches cerberus output
 #/
 	}
 	*/
-	switch( self.characterindex )
+	map = level.customMap;
+	if(isDefined(map) && map != "vanilla")
 	{
-		case 0:
-			self character/c_zom_oleary::main();
-			self setviewmodel( "c_zom_oleary_shortsleeve_viewhands" );
-			level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
-			self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "judge_zm";
-			self set_player_is_female( 0 );
-			self.character_name = "Finn";
-			break;
-		case 1:
-			self character/c_zom_deluca::main();
-			self setviewmodel( "c_zom_deluca_longsleeve_viewhands" );
-			level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
-			self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "thompson_zm";
-			self set_player_is_female( 0 );
-			self.character_name = "Sal";
-			break;
-		case 2:
-			self character/c_zom_handsome::main();
-			self setviewmodel( "c_zom_handsome_sleeveless_viewhands" );
-			level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
-			self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "blundergat_zm";
-			self set_player_is_female( 0 );
-			self.character_name = "Billy";
-			break;
-		case 3:
-			self character/c_zom_arlington::main();
-			self setviewmodel( "c_zom_arlington_coat_viewhands" );
-			level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
-			self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "ray_gun_zm";
-			self set_player_is_female( 0 );
-			self.character_name = "Arlington";
-			break;
+		switch(self.characterindex)
+		{
+			case 0:
+				self setmodel( "c_zom_player_oleary_fb" );
+				self set_player_is_female( 0 );
+				self.voice = "american";
+				self.skeleton = "base";
+				self setviewmodel( "c_zom_oleary_shortsleeve_viewhands" );
+				self.characterindex = 0;
+				self.character_name = "Gerard";
+				break;
+			case 1:
+				self setmodel( "c_zom_player_oleary_fb" );
+				self set_player_is_female( 0 );
+				self.voice = "american";
+				self.skeleton = "base";
+				self setviewmodel( "c_zom_oleary_shortsleeve_viewhands" );
+				self.characterindex = 1;
+				self.character_name = "Cahz";
+				break;
+			case 2:
+				self setmodel( "c_zom_player_oleary_fb" );
+				self set_player_is_female( 0 );
+				self.voice = "american";
+				self.skeleton = "base";
+				self setviewmodel( "c_zom_oleary_shortsleeve_viewhands" );
+				self.characterindex = 2;
+				self.character_name = "Jezuz";
+			case 3:
+				self setmodel( "c_zom_player_oleary_fb" );
+				self set_player_is_female( 0 );
+				self.voice = "american";
+				self.skeleton = "base";
+				self setviewmodel( "c_zom_oleary_shortsleeve_viewhands" );
+				self.characterindex = 3;
+				self.character_name = "Rekti";
+		}
+	}
+	else{
+		switch( self.characterindex )
+		{
+			case 0:
+				self character/c_zom_oleary::main();
+				self setviewmodel( "c_zom_oleary_shortsleeve_viewhands" );
+				level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
+				self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "judge_zm";
+				self set_player_is_female( 0 );
+				self.character_name = "Finn";
+				break;
+			case 1:
+				self character/c_zom_deluca::main();
+				self setviewmodel( "c_zom_deluca_longsleeve_viewhands" );
+				level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
+				self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "thompson_zm";
+				self set_player_is_female( 0 );
+				self.character_name = "Sal";
+				break;
+			case 2:
+				self character/c_zom_handsome::main();
+				self setviewmodel( "c_zom_handsome_sleeveless_viewhands" );
+				level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
+				self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "blundergat_zm";
+				self set_player_is_female( 0 );
+				self.character_name = "Billy";
+				break;
+			case 3:
+				self character/c_zom_arlington::main();
+				self setviewmodel( "c_zom_arlington_coat_viewhands" );
+				level.vox maps/mp/zombies/_zm_audio::zmbvoxinitspeaker( "player", "vox_plr_", self );
+				self.favorite_wall_weapons_list[ self.favorite_wall_weapons_list.size ] = "ray_gun_zm";
+				self set_player_is_female( 0 );
+				self.character_name = "Arlington";
+				break;
+		}
 	}
 	self setmovespeedscale( 1 );
 	self setsprintduration( 4 );
@@ -566,7 +835,7 @@ assign_lowest_unused_character_index() //checked changed to match cerberus outpu
 		{
 			if ( n_characters_defined == ( players.size - 1 ) )
 			{
-				if ( !is_true( level.has_weasel ) )
+				if ( isDefined( level.has_weasel ) && !level.has_weasel )
 				{
 					level.has_weasel = 1;
 					return 3;
@@ -1066,6 +1335,13 @@ alcatraz_afterlife_doors() //checked changed to match cerberus output
 	if ( isDefined( self.script_noteworthy ) && self.script_noteworthy == "afterlife_door" )
 	{
 		self sethintstring( &"ZM_PRISON_AFTERLIFE_DOOR" );
+		if ( isDefined ( level.customMap ) && level.customMap == "cellblock" || isDefined ( level.customMap ) && level.customMap == "rooftop" )
+		{
+			if ( self.origin != ( 2138, 9210, 1375 ) )
+			{
+				self maps/mp/zombies/_zm_blockers::door_opened( 0 );
+			}
+		}
 		/*
 /#
 		self thread afterlife_door_open_sesame();
@@ -1110,7 +1386,6 @@ alcatraz_afterlife_doors() //checked changed to match cerberus output
 						{
 							array_delete( getentarray( m_shockbox.script_string, "script_noteworthy" ) );
 						}
-						self maps/mp/zombies/_zm_blockers::door_opened( 0 ); //you have to buy doors after powering them if you don't do this
 						attacker notify( "player_opened_afterlife_door" );
 						break;
 					}
@@ -1241,3 +1516,189 @@ is_gametype_active( a_gametypes ) //not in cerberus output
 	return is_gametype_active;
 }
 */
+
+custom_electric_chair_player_thread( m_linkpoint, chair_number, n_effects_duration )
+{
+	self endon( "death_or_disconnect" );
+	e_home_telepoint = getstruct( "home_telepoint_" + chair_number, "targetname" );
+	e_corpse_location = getstruct( "corpse_starting_point_" + chair_number, "targetname" );
+	self disableweapons();
+	self enableinvulnerability();
+	self setstance( "stand" );
+	self playerlinktodelta( m_linkpoint, "tag_origin", 1, 20, 20, 20, 20 );
+	self setplayerangles( m_linkpoint.angles );
+	self playsoundtoplayer( "zmb_electric_chair_2d", self );
+	self do_player_general_vox( "quest", "chair_electrocution", undefined, 100 );
+	self ghost();
+	self.ignoreme = 1;
+	self.dontspeak = 1;
+	self setclientfieldtoplayer( "isspeaking", 1 );
+	wait ( n_effects_duration - 2 );
+	switch( self.character_name )
+	{
+		case "Arlington":
+			self playsoundontag( "vox_plr_3_arlington_electrocution_0", "J_Head" );
+			break;
+		case "Sal":
+			self playsoundontag( "vox_plr_1_sal_electrocution_0", "J_Head" );
+			break;
+		case "Billy":
+			self playsoundontag( "vox_plr_2_billy_electrocution_0", "J_Head" );
+			break;
+		case "Finn":
+			self playsoundontag( "vox_plr_0_finn_electrocution_0", "J_Head" );
+			break;
+	}
+	wait 2;
+	level.zones[ "zone_golden_gate_bridge" ].is_enabled = 1;
+	level.zones[ "zone_golden_gate_bridge" ].is_spawning_allowed = 1;
+	self unlink();
+	self setstance( "stand" );
+	if ( chair_number == 0 )
+	{
+		self setorigin( ( 2282.9, 9557.3, 1792 ) );
+	}
+	else if ( chair_number == 1 )
+	{
+		self setorigin( ( 2304.65, 10019, 1792 ) );
+	}
+	else if ( chair_number == 2 )
+	{
+		self setorigin( ( 2642.4, 10023.6, 1792 ) );
+	}
+	else if ( chair_number == 3 )
+	{
+		self setorigin( ( 2290.6, 9444.3, 1792 ) );
+	}
+	else if ( chair_number == 4 )
+	{
+		self setorigin( ( 2436.5, 9394.1, 1792 ) );
+	}
+	else if ( chair_number == 5 )
+	{
+		self setorigin( ( 2540.81, 9263.64, 1792 ) );
+	}
+	self enableweapons();
+	self setclientfieldtoplayer( "rumble_electric_chair", 0 );
+	wait 1.5;
+	//level thread bridge_reset();
+	self disableinvulnerability();
+	self Show();
+	self.ignoreme = 0;
+	self.dontspeak = 0;
+}
+
+bridge_reset()
+{
+	while(1)
+	{
+		while( level.characters_in_nml.size == 0)
+		{
+			wait 1;
+		}
+		while (level.characters_in_nml.size > 0)
+		{
+			wait 1;
+		}
+		if( flag( "plane_trip_to_nml_successful" ) )
+		{
+			flag_clear( "plane_trip_to_nml_successful" );
+		}
+		/*
+		level.players_on_bridge = 0;
+		foreach ( player in level.players )
+		{
+			player.zone = player get_current_zone();
+			if( maps/mp/zombies/_zm_utility::is_player_valid( player ) && player.zone == "zone_golden_gate_bridge" )
+			{
+				level.players_on_bridge++;
+			}
+		}*/
+		//if ( level.players_on_bridge == 0 )
+		//{
+		level notify( "bridge_empty" );
+		level waittill( "start_of_round" );
+		prep_for_new_quest();
+		waittill_crafted( "refuelable_plane" );
+		maps/mp/zombies/_zm_ai_brutus::transfer_plane_trigger( "fuel", "fly" );
+		t_plane_fly = getent( "plane_fly_trigger", "targetname" );
+		t_plane_fly trigger_on();
+		wait 1;
+		//}
+	}
+}
+
+auto_upgrade_tower()
+{
+	level endon( "end_game");
+	level endon( "tower_disabled" );
+	
+	level.enableTowerUpgrade = getDvarIntDefault( "enableTowerUpgrade", 0 );
+	level.zombie_vars[ "enableTowerUpgrade" ] = level.enableTowerUpgrade;
+	
+	if ( !level.enableTowerUpgrade )
+	{
+		level notify ( "tower_disabled" );
+	}
+	while ( 1 )
+	{
+		level waittill( "trap_activated" );
+		wait 2;
+		level notify( "tower_trap_upgraded" );
+	}
+}
+
+disable_gondola()
+{
+	wait 7;
+	level notify( "gondola_powered_on_roof" );
+	t_call_triggers = getentarray( "gondola_call_trigger", "targetname" );
+	call_triggers = getFirstArrayKey( t_call_triggers );
+	while ( isDefined( call_triggers ) )
+	{
+		trigger = t_call_triggers[ call_triggers ];
+		trigger.origin = ( 0, 0, 0 );
+		return;
+	}
+}
+
+disable_doors_docks()
+{
+	zm_doors = getentarray( "zombie_door", "targetname" );
+	i = 0;
+	while ( i < zm_doors.size )
+	{
+		if ( zm_doors[ i ].origin == ( 101, 8124, 311 ) )
+		{
+			zm_doors[ i ].origin = ( 0, 0, 0 );
+		}
+		i++;
+	}
+}
+
+disable_doors_cellblock()
+{
+	zm_doors = getentarray( "zombie_door", "targetname" );
+	i = 0;
+	while ( i < zm_doors.size )
+	{
+		if ( zm_doors[ i ].origin == ( 2429, 9793, 1374 ) || zm_doors[ i ].origin == ( 2281, 9484, 1564 ) || zm_doors[ i ].origin == ( -149, 8679, 1166 ) )
+		{
+			zm_doors[ i ].origin = ( 0, 0, 0 );
+		}
+		i++;
+	}
+}
+
+disable_afterlife_boxes()
+{
+	a_afterlife_triggers = getstructarray( "afterlife_trigger", "targetname" );
+	_a87 = a_afterlife_triggers;
+	_k87 = getFirstArrayKey( _a87 );
+	while ( isDefined( _k87 ) )
+	{
+		struct = _a87[ _k87 ];
+		struct.unitrigger_stub.origin = ( 0, 0, 0 );
+		_k87 = getNextArrayKey( _a87, _k87 );
+	}
+}
