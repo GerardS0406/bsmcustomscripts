@@ -42,7 +42,15 @@ main() //checked changed to match cerberus output
 	level thread sq_main_controller();
 	maps/mp/gametypes_zm/_zm_gametype::setup_standard_objects( "zclassic" );
 	maps/mp/zombies/_zm_game_module::set_current_game_module( level.game_module_standard_index );
-	maps/mp/zombies/_zm_ai_brutus::init();
+	if(GetDvarIntDefault("useBossZombies", 1) || level.customMap == "vanilla")
+	{
+		maps/mp/zombies/_zm_ai_brutus::init();
+	}
+	else
+	{
+		registerclientfield( "actor", "helmet_off", 9000, 1, "int" );
+		registerclientfield( "actor", "brutus_lock_down", 9000, 1, "int" );
+	}
 	level thread maps/mp/zombies/_zm_craftables::think_craftables();
 	maps/mp/zm_prison_achievement::init();
 	level thread maps/mp/zm_prison_spoon::init();
@@ -53,7 +61,11 @@ main() //checked changed to match cerberus output
 		clip connectpaths();
 		clip delete();
 	}
-	level thread give_afterlife();
+	map = level.customMap;
+	if(isDefined(map) && map == "vanilla")
+	{
+		level thread give_afterlife();
+	}
 	level thread maps/mp/zm_alcatraz_sq::start_alcatraz_sidequest();
 	onplayerconnect_callback( ::player_quest_vfx );
 	flag_wait( "initial_blackscreen_passed" );
@@ -301,4 +313,3 @@ player_quest_vfx() //checked matches cerberus output
 		exploder( 2000 );
 	}
 }
-
