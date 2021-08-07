@@ -22,6 +22,20 @@
 
 init() //checked matches cerberus output
 {
+	//begin debug code
+	level.custom_zm_powerups_loaded = 1;
+	level.zombiesAlwaysDropPowerups = 1;
+	maps/mp/zombies/_zm_bot::init();
+	if ( !isDefined( level.debugLogging_zm_powerups ) )
+	{
+		level.debugLogging_zm_powerups = 0;
+	}
+	if ( level.debugLogging_zm_powerups )
+	{
+		level.zombiesAlwaysDropPowerups = getDvarIntDefault( "zombiesAlwaysDropPowerups", 0 );
+		thread zombies_always_drop_powerups();
+	}
+	//end debug code
 	precacheshader( "specialty_doublepoints_zombies" );
 	precacheshader( "specialty_instakill_zombies" );
 	precacheshader( "specialty_firesale_zombies" );
@@ -43,12 +57,17 @@ init() //checked matches cerberus output
 	set_zombie_var( "zombie_powerup_point_doubler_time", 30, undefined, undefined, 1 );
 	set_zombie_var( "zombie_powerup_drop_increment", 2000 ); 
 	set_zombie_var( "zombie_powerup_drop_max_per_round", 4 ); 
+	if ( level.debugLogging_zm_powerups )
+	{
+		level.maxPowerupsPerRound = getDvarIntDefault( "maxPowerupsPerRound", 4 );
+		level.zombie_vars["zombie_powerup_drop_max_per_round"] = level.maxPowerupsPerRound;
+	}
 	onplayerconnect_callback( ::init_player_zombie_vars );
 	level._effect[ "powerup_on" ] = loadfx( "misc/fx_zombie_powerup_on" );
 	level._effect[ "powerup_off" ] = loadfx( "misc/fx_zombie_powerup_off" );
 	level._effect[ "powerup_grabbed" ] = loadfx( "misc/fx_zombie_powerup_grab" );
 	level._effect[ "powerup_grabbed_wave" ] = loadfx( "misc/fx_zombie_powerup_wave" );
-	if ( is_true( level.using_zombie_powerups ) )
+	if ( isDefined( level.using_zombie_powerups ) && level.using_zombie_powerups )
 	{
 		level._effect[ "powerup_on_red" ] = loadfx( "misc/fx_zombie_powerup_on_red" );
 		level._effect[ "powerup_grabbed_red" ] = loadfx( "misc/fx_zombie_powerup_red_grab" );
@@ -75,7 +94,7 @@ init() //checked matches cerberus output
 init_powerups() //checked matches cerberus output
 {
 	flag_init( "zombie_drop_powerups" );
-	if ( is_true( level.enable_magic ) )
+	if ( isDefined( level.enable_magic ) && level.enable_magic )
 	{
 		flag_set( "zombie_drop_powerups" );
 	}
@@ -472,7 +491,7 @@ powerup_round_start() //checked matches cerberus output
 	level.powerup_drop_count = 0;
 }
 
-powerup_drop( drop_point ) //checked partially changed to match cerberus output
+powerup_drop( drop_point ) //modified function
 {
 	if ( level.powerup_drop_count >= level.zombie_vars[ "zombie_powerup_drop_max_per_round" ] )
 	{
@@ -532,6 +551,11 @@ powerup_drop( drop_point ) //checked partially changed to match cerberus output
 	powerup thread powerup_emp();
 	level.zombie_vars[ "zombie_drop_item" ] = 0;
 	level notify( "powerup_dropped" );
+	if( level.customMap == "house" )
+	{
+		wait 0.05;
+		powerup MoveTo((5200, 6313, -15), 5, 0, 0 );
+	}
 }
 
 specific_powerup_drop( powerup_name, drop_spot, powerup_team, powerup_location ) //checked partially changed to match cerberus output
@@ -962,7 +986,7 @@ powerup_grab(powerup_team) //checked partially changed to match cerberus output
 				i++;
 				continue;
 			}
-			if ( !is_true( self.can_pick_up_in_last_stand ) && players[ i ] maps/mp/zombies/_zm_laststand::player_is_in_laststand() )
+			if ( isdefined( self.can_pick_up_in_last_stand ) && !self.can_pick_up_in_last_stand && players[ i ] maps/mp/zombies/_zm_laststand::player_is_in_laststand() )
 			{
 				i++;
 				continue;
@@ -1096,7 +1120,7 @@ powerup_grab(powerup_team) //checked partially changed to match cerberus output
 					playfx( level._effect[ "powerup_grabbed_wave" ], self.origin );
 				}
 
-				if ( is_true( self.stolen ) )
+				if ( isdefined( self.stolen ) && self.stolen )
 				{
 					level notify( "monkey_see_monkey_dont_achieved" );
 				}
@@ -1461,12 +1485,12 @@ nuke_powerup( drop_item, player_team ) //checked changed to match cerberus outpu
 	i = 0;
 	while ( i < zombies.size )
 	{
-		if ( is_true( zombies[ i ].ignore_nuke ) )
+		if ( isdefined( zombies[ i ].ignore_nuke ) && zombies[ i ].ignore_nuke )
 		{
 			i++;
 			continue;
 		}
-		if ( is_true( zombies[ i ].marked_for_death ) )
+		if ( isdefined( zombies[ i ].marked_for_death ) && zombies[ i ].marked_for_death )
 		{
 			i++;
 			continue;
@@ -1511,7 +1535,7 @@ nuke_powerup( drop_item, player_team ) //checked changed to match cerberus outpu
 		}
 		if ( !zombies_nuked[ i ].isdog )
 		{
-			if ( !is_true( zombies_nuked[ i ].no_gib ) )
+			if ( isdefined( zombies_nuked[ i ].no_gib ) && !zombies_nuked[ i ].no_gib )
 			{
 				zombies_nuked[ i ] maps/mp/zombies/_zm_spawner::zombie_head_gib();
 			}
@@ -1560,7 +1584,7 @@ double_points_powerup( drop_item, player ) //checked partially matches cerberus 
 	level endon( "powerup points scaled_" + player.team );
 	team = player.team;
 	level thread point_doubler_on_hud( drop_item, team );
-	if ( is_true( level.pers_upgrade_double_points ) )
+	if ( isDefined( level.pers_upgrade_double_points ) && level.pers_upgrade_double_points )
 	{
 		player thread maps/mp/zombies/_zm_pers_upgrades_functions::pers_upgrade_double_points_pickup_start();
 	}
@@ -1709,7 +1733,7 @@ check_for_instakill( player, mod, hit_location ) //checked changed to match cerb
 		self dodamage( self.health + 666, self.origin, player, self, hit_location, modname );
 		player notify( "zombie_killed" );
 	}
-	if ( isDefined( player ) && isalive( player ) && level.zombie_vars[ player.team ][ "zombie_insta_kill" ] || is_true( player.personal_instakill ) )
+	if ( isDefined( player ) && isalive( player ) && level.zombie_vars[ player.team ][ "zombie_insta_kill" ] || isDefined( player.personal_instakill ) && player.personal_instakill )
 	{
 		if ( is_magic_bullet_shield_enabled( self ) )
 		{
@@ -1966,11 +1990,11 @@ setup_firesale_audio() //checked changed to match cerberus output
 
 play_firesale_audio() //checked matches cerberus output
 {
-	if ( is_true( level.sndfiresalemusoff ) )
+	if ( isDefined( level.sndfiresalemusoff ) && level.sndfiresalemusoff )
 	{
 		return;
 	}
-	if ( is_true( level.sndannouncerisrich ) )
+	if ( isDefined( level.sndannouncerisrich ) && level.sndannouncerisrich )
 	{
 		self playloopsound( "mus_fire_sale_rich" );
 	}
@@ -2006,11 +2030,11 @@ setup_bonfiresale_audio() //checked changed to match cerberus output
 
 play_bonfiresale_audio() //checked matches cerberus output
 {
-	if ( is_true( level.sndfiresalemusoff ) )
+	if ( isDefined( level.sndfiresalemusoff ) && level.sndfiresalemusoff )
 	{
 		return;
 	}
-	if ( is_true( level.sndannouncerisrich ) )
+	if ( isDefined( level.sndannouncerisrich ) && level.sndannouncerisrich )
 	{
 		self playloopsound( "mus_fire_sale_rich" );
 	}
@@ -2037,7 +2061,7 @@ free_perk_powerup( item ) //checked changed to match cerberus output
 				player notify( "player_received_ghost_round_free_perk" );
 			}
 			free_perk = player maps/mp/zombies/_zm_perks::give_random_perk();
-			if ( is_true( level.disable_free_perks_before_power ) )
+			if ( isDefined( level.disable_free_perks_before_power ) && level.disable_free_perks_before_power )
 			{
 				player thread disable_perk_before_power( free_perk );
 			}
@@ -2078,7 +2102,7 @@ random_weapon_powerup( item, player ) //checked partially matches cerberus outpu
 	{
 		return 0;
 	}
-	if ( !is_true( player.random_weapon_powerup_throttle ) || player isswitchingweapons() && player.is_drinking > 0 )
+	if ( isDefined( player.random_weapon_powerup_throttle ) && !player.random_weapon_powerup_throttle || player isswitchingweapons() && player.is_drinking > 0 )
 	{
 		return 0;
 	}
@@ -2206,7 +2230,7 @@ minigun_weapon_powerup( ent_player, time ) //checked matches cerberus output
 	{
 		time = level._minigun_time_override;
 	}
-	if ( ent_player.zombie_vars[ "zombie_powerup_minigun_on" ] || ent_player getcurrentweapon() == "minigun_zm" && is_true( ent_player.has_minigun ) )
+	if ( ent_player.zombie_vars[ "zombie_powerup_minigun_on" ] || ent_player getcurrentweapon() == "minigun_zm" && isDefined( ent_player.has_minigun ) && ent_player.has_minigun )
 	{
 		if ( ent_player.zombie_vars[ "zombie_powerup_minigun_time" ] < time )
 		{
@@ -2309,7 +2333,7 @@ minigun_weapon_powerup_off() //checked matches cerberus output
 
 minigun_watch_gunner_downed() //checked partially matches cerberus output did not change
 {
-	if ( !is_true( self.has_minigun ) )
+	if ( isDefined( self.has_minigun ) && !self.has_minigun )
 	{
 		return;
 	}
@@ -2338,7 +2362,7 @@ tesla_weapon_powerup( ent_player, time ) //checked changed to match cerberus out
 	{
 		time = 11;
 	}
-	if ( ent_player.zombie_vars[ "zombie_powerup_tesla_on" ] && ent_player getcurrentweapon() == "tesla_gun_zm" || is_true( ent_player.has_tesla ) )
+	if ( ent_player.zombie_vars[ "zombie_powerup_tesla_on" ] && ent_player getcurrentweapon() == "tesla_gun_zm" || isDefined( ent_player.has_tesla ) && ent_player.has_tesla )
 	{
 		ent_player givemaxammo( "tesla_gun_zm" );
 		if ( ent_player.zombie_vars[ "zombie_powerup_tesla_time" ] < time )
@@ -2457,7 +2481,7 @@ tesla_weapon_powerup_off() //checked matches cerberus output
 
 tesla_watch_gunner_downed() //checked changed to match cerberus output
 {
-	if ( !is_true( self.has_tesla ) )
+	if ( isDefined( self.has_tesla ) && !self.has_tesla )
 	{
 		return;
 	}
@@ -2774,7 +2798,7 @@ func_should_drop_carpenter() //checked matches cerberus output
 
 func_should_drop_fire_sale() //checked partially changed to match cerberus output
 {
-	if ( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] == 1 || level.chest_moves < 1 || is_true( level.disable_firesale_drop ) )
+	if ( level.zombie_vars[ "zombie_powerup_fire_sale_on" ] == 1 || level.chest_moves < 1 || isDefined( level.disable_firesale_drop ) && level.disable_firesale_drop )
 	{
 		return 0;
 	}
@@ -2856,7 +2880,16 @@ teller_withdrawl( powerup, player ) //checked matches cerberus output
 	player maps/mp/zombies/_zm_score::add_to_player_score( powerup.value );
 }
 
-
-
-
+zombies_always_drop_powerups() //debug code added
+{
+	if ( !level.zombiesAlwaysDropPowerups )
+	{
+		return;
+	}
+	while ( 1 )
+	{
+		level.zombie_vars[ "zombie_drop_item" ] = level.zombiesAlwaysDropPowerups;
+		wait 0.05;
+	}
+}
 
