@@ -20,14 +20,14 @@ init_fountain()
 fountain_setup()
 {
 	flag_wait( "initial_blackscreen_passed" );
-	fountain_debug_print( "fountain scripts running" );
+	//fountain_debug_print( "fountain scripts running" );
 	level thread set_flag_on_notify( "courtyard_fountain_open", "courtyard_fountain_broken" );
 	level thread sloth_fountain_think();
 	level thread maze_fountain_think();
 	level thread fountain_transport_think();
-/#
+/*/#
 	level thread debug_warp_player_to_fountain();
-#/
+#/*/
 }
 
 maze_fountain_collmap()
@@ -48,7 +48,7 @@ sloth_fountain_think()
 		sound_ent = spawn( "script_origin", s_courtyard_fountain.origin + sound_offset );
 		playfx( level._effect[ "fx_buried_fountain_spray" ], s_courtyard_fountain.origin );
 		playfx( level._effect[ "fountain_break" ], s_courtyard_fountain.origin );
-		sound_ent playloopsound( "zmb_fountain_spray", 0,2 );
+		sound_ent playloopsound( "zmb_fountain_spray", 0.2 );
 	}
 	show_maze_fountain_water();
 	fountain_debug_print( "courtyard_fountain_broken" );
@@ -72,7 +72,10 @@ maze_fountain_think()
 	hide_maze_fountain_water();
 	wait_for_maze_fountain_to_be_destroyed();
 	destroy_maze_fountain();
-	flag_wait( "courtyard_fountain_broken" );
+	if(isdefined(level.customMap) && level.customMap == "vanilla")
+		flag_wait( "courtyard_fountain_broken" );
+	else
+		flag_set( "courtyard_fountain_broken" );
 	flag_set( "fountain_transport_active" );
 }
 
@@ -82,24 +85,25 @@ hide_maze_fountain_water()
 	t_water enablelinkto();
 	m_water = getent( "maze_fountain_water", "targetname" );
 	t_water linkto( m_water );
-	m_water movez( -475, 0,05 );
+	m_water.origin = m_water.origin + (0,0,-475);
 }
 
 show_maze_fountain_water()
 {
 	m_water = getent( "maze_fountain_water", "targetname" );
-	m_water movez( 398, 6 );
+	m_water.origin = m_water.origin + (0,0,398);
 	m_water ghost();
 	fountain_debug_print( "maze water ready" );
 }
 
 wait_for_maze_fountain_to_be_destroyed()
 {
+	/*
 /#
 	level endon( "_destroy_maze_fountain" );
-#/
+#/*/
 	t_damage = getent( "maze_fountain_trigger", "targetname" );
-	health = 1000;
+	health = 0;
 	while ( health > 0 )
 	{
 		t_damage waittill( "damage", damage, attacker, direction, point, type, tagname, modelname, partname, weaponname, idflags );
@@ -139,7 +143,6 @@ fountain_transport_think()
 			if ( flag( "fountain_transport_active" ) )
 			{
 				player thread transport_player_to_start_zone();
-				break;
 			}
 			else
 			{
@@ -160,7 +163,7 @@ delay_transport_check()
 transport_player_to_start_zone()
 {
 	self endon( "death_or_disconnect" );
-	fountain_debug_print( "transport player!" );
+	//fountain_debug_print( "transport player!" );
 	if ( !isDefined( level._fountain_transporter ) )
 	{
 		level._fountain_transporter = spawnstruct();
@@ -171,7 +174,11 @@ transport_player_to_start_zone()
 	self play_teleport_fx();
 	self flash_screen_white();
 	wait_network_frame();
-	if ( level._fountain_transporter.index >= level._fountain_transporter.end_points.size )
+	if ( level._fountain_transporter.index >= level._fountain_transporter.end_points.size && isdefined(level.customMap) && level.customMap == "vanilla" )
+	{
+		level._fountain_transporter.index = 0;
+	}
+	else if ( level._fountain_transporter.index >= 8 && isdefined(level.customMap ) && level.customMap != "vanilla")
 	{
 		level._fountain_transporter.index = 0;
 	}
@@ -182,7 +189,7 @@ transport_player_to_start_zone()
 		if ( tries >= 4 )
 		{
 			tries = 0;
-			wait 0,05;
+			wait 0.05;
 		}
 		level._fountain_transporter.index++;
 		if ( level._fountain_transporter.index >= level._fountain_transporter.end_points.size )
@@ -190,8 +197,17 @@ transport_player_to_start_zone()
 			level._fountain_transporter.index = 0;
 		}
 	}
-	self setorigin( level._fountain_transporter.end_points[ level._fountain_transporter.index ].origin );
-	self setplayerangles( level._fountain_transporter.end_points[ level._fountain_transporter.index ].angles );
+	if(isdefined(level.customMap) && level.customMap != "vanilla")
+	{
+		self setorigin( level.mazeSpawnpoints[ level._fountain_transporter.index ].origin );
+		self setplayerangles( level.mazeSpawnpoints[ level._fountain_transporter.index ].angles );
+	}
+	else
+	{
+		self setorigin( level._fountain_transporter.end_points[ level._fountain_transporter.index ].origin );
+		self setplayerangles( level._fountain_transporter.end_points[ level._fountain_transporter.index ].angles );
+	}
+	self DoDamage(self.health + 1000, (0,0,0));
 	level._fountain_transporter.index++;
 	wait_network_frame();
 	self play_teleport_fx();
@@ -215,16 +231,16 @@ flash_screen_white()
 {
 	self endon( "death_or_disconnect" );
 	self.hud_transporter_flash = self create_client_hud_elem();
-	self.hud_transporter_flash fadeovertime( 0,2 );
+	self.hud_transporter_flash fadeovertime( 0.2 );
 	self.hud_transporter_flash.alpha = 1;
-	wait 0,2;
+	wait 0.2;
 }
 
 flash_screen_fade_out()
 {
-	self.hud_transporter_flash fadeovertime( 0,2 );
+	self.hud_transporter_flash fadeovertime( 0.2 );
 	self.hud_transporter_flash.alpha = 0;
-	wait 0,2;
+	wait 0.2;
 	self.hud_transporter_flash destroy();
 	self.hud_transporter_flash = undefined;
 }
@@ -266,7 +282,7 @@ debug_warp_player_to_fountain()
 		{
 			player = _a332[ _k332 ];
 			_warp_player_to_maze_fountain( player, str_warp_point );
-			wait 0,25;
+			wait 0.25;
 			_k332 = getNextArrayKey( _a332, _k332 );
 		}
 	}
@@ -279,7 +295,7 @@ _warp_player_to_maze_fountain( player, str_teleport_point )
 	origin = s_warp.origin;
 	while ( positionwouldtelefrag( origin ) )
 	{
-		wait 0,05;
+		wait 0.05;
 		origin = s_warp.origin + ( randomfloatrange( -64, 64 ), randomfloatrange( -64, 64 ), 0 );
 	}
 	player setorigin( origin );
@@ -288,10 +304,10 @@ _warp_player_to_maze_fountain( player, str_teleport_point )
 
 fountain_debug_print( str_text )
 {
-/#
+/*/#
 	if ( getDvarInt( #"AE3F04F6" ) > 0 )
 	{
 		iprintlnbold( str_text );
 #/
-	}
+	}*/
 }
