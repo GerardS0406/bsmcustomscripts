@@ -12,19 +12,10 @@ precache() //checked matches cerberus output
 {
 }
 
-farm_treasure_chest_init() //checked matches cerberus output
-{
-	chest1 = getstruct( "farm_chest", "script_noteworthy" );
-	level.chests = [];
-	level.chests[ level.chests.size ] = chest1;
-	maps/mp/zombies/_zm_magicbox::treasure_chest_init( "farm_chest" );
-}
-
 main() //checked matches cerberus output
 {
 	maps/mp/gametypes_zm/_zm_gametype::setup_standard_objects( "farm" );
 	init_standard_farm();
-	farm_treasure_chest_init();
 	level.enemy_location_override_func = ::enemy_location_override;
 	flag_wait( "initial_blackscreen_passed" );
 	level thread maps/mp/zombies/_zm_zonemgr::enable_zone( "zone_far_ext" );
