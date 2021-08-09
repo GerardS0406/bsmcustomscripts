@@ -1,4 +1,3 @@
-//checked include match cerberus output
 #include maps/mp/zombies/_zm_zonemgr;
 #include maps/mp/gametypes_zm/_zm_gametype;
 #include maps/mp/zombies/_zm_utility;
@@ -45,12 +44,12 @@ get_zone_from_position( v_pos, ignore_enabled_check ) //checked changed to match
 {
 	zone = undefined;
 	scr_org = spawn( "script_origin", v_pos );
-	keys = getarraykeys(level.zones);
+	keys = getarraykeys( level.zones );
 	for ( i = 0; i < keys.size; i++ )
 	{
 		if ( scr_org entity_in_zone( keys[ i ], ignore_enabled_check ) )
 		{
-			zone = keys [i ];
+			zone = keys[ i ];
 			break;
 		}
 	}
@@ -80,7 +79,7 @@ get_zone_zbarriers( zone_name ) //checked matches cerberus output
 
 get_players_in_zone( zone_name, return_players ) //checked changed to match cerberus output
 {
-	if ( !zone_is_enabled( zone_name ) )
+	if(!zone_is_enabled(zone_name))
 	{
 		return 0;
 	}
@@ -118,7 +117,7 @@ player_in_zone( zone_name ) //checked changed to match cerberus output
 		players = get_players();
 		for ( j = 0; j < players.size; j++ )
 		{
-			if ( players[ j ] istouching( zone.volumes[ i ] ) && !players[ j ] .sessionstate == "spectator" )
+			if ( players[ j ] istouching( zone.volumes[ i ]) && !players[ j ] .sessionstate == "spectator" )
 			{
 				return 1;
 			}
@@ -129,11 +128,11 @@ player_in_zone( zone_name ) //checked changed to match cerberus output
 
 entity_in_zone( zone_name, ignore_enabled_check ) //checked changed to match cerberus output
 {
-	if ( !zone_is_enabled( zone_name ) && !is_true( ignore_enabled_check ) )
+	if ( !zone_is_enabled( zone_name ) && isdefined( ignore_enabled_check ) && !ignore_enabled_check )
 	{
 		return 0;
 	}
-	zone = level.zones[ zone_name ];
+	zone = level.zones[zone_name];
 	for ( i = 0; i < zone.volumes.size; i++ )
 	{
 		if ( self istouching( zone.volumes[ i ] ) )
@@ -159,20 +158,20 @@ deactivate_initial_barrier_goals() //checked changed to match cerberus output
 
 zone_init( zone_name ) //checked changed to match cerberus output
 {
-	
+
 	if ( isDefined( level.zones[ zone_name ] ) )
 	{
 		return;
 	}
-	
+
 	level.zones[ zone_name ] = spawnstruct();
 	zone = level.zones[ zone_name ];
-	zone.is_enabled = 0; 
-	zone.is_occupied = 0; 
+	zone.is_enabled = 0;
+	zone.is_occupied = 0;
 	zone.is_active = 0;
 	zone.adjacent_zones = [];
 	zone.is_spawning_allowed = 0;
-	
+
 	spawn_points = maps/mp/gametypes_zm/_zm_gametype::get_player_spawns_for_gametype();
 	for( i = 0; i < spawn_points.size; i++ )
 	{
@@ -214,7 +213,7 @@ zone_init( zone_name ) //checked changed to match cerberus output
 		for (i = 0; i < spots.size; i++)
 		{
 			spots[ i ].zone_name = zone_name;
-			if ( !is_true( spots[ i ].is_blocked ) )
+			if ( isDefined( spots[ i ].is_blocked ) && !spots[ i ].is_blocked || !isDefined( spots[ i ].is_blocked ) ) //spots[ i ].isblocked is not defined
 			{
 				spots[ i ].is_enabled = 1;
 			}
@@ -457,7 +456,7 @@ add_zone_flags( wait_flag, add_flags ) //checked changed to match cerberus outpu
 	i = 0;
 	for ( i = 0; i < keys.size; i++ )
 	{
-		if ( keys[ i ] == wait_flag )
+		if(keys[ i ] == wait_flag)
 		{
 			level.zone_flags[ keys[ i ] ] = arraycombine( level.zone_flags[ keys[ i ] ], add_flags, 1, 0 );
 			return;
@@ -575,7 +574,7 @@ zone_flag_wait( flag_name )
 			{
 				flag_set( check_flag[ k ] );
 			}
-			break;
+			//break;
 		}
 	}
 }
@@ -629,7 +628,98 @@ manage_zones( initial_zone ) //checked changed to match cerberus output
 	{
 		[[ level.zone_manager_init_func ]]();
 	}
-
+	if ( isDefined( level.customMap ) && level.customMap == "redroom" )
+	{
+		initial_zone = [];
+		initial_zone[ 0 ] = "zone_orange_level3b";
+	}
+	if ( isDefined( level.customMap ) && level.customMap == "rooftop" )
+	{
+		initial_zone = [];
+		initial_zone[ 0 ] = "zone_roof";
+		initial_zone[ 1 ] = "zone_roof_infirmary";
+		initial_zone[ 2 ] = "zone_infirmary";
+	}
+	else if ( isDefined( level.customMap ) && level.customMap == "docks" )
+	{
+		initial_zone = [];
+		initial_zone[ 0 ] = "zone_dock";
+		initial_zone[ 1 ] = "zone_dock_puzzle";
+		initial_zone[ 2 ] = "zone_dock_gondola";	
+	}
+	else if ( isDefined( level.customMap ) && level.customMap == "excavation" )
+	{
+		initial_zone = [];
+		initial_zone[ 0 ] = "zone_nml_2a";
+		initial_zone[ 1 ] = "zone_nml_2";
+		initial_zone[ 2 ] = "zone_bunker_tank_e";
+		initial_zone[ 3 ] = "zone_bunker_tank_e1";
+		initial_zone[ 4 ] = "zone_bunker_tank_e2";
+		initial_zone[ 5 ] = "zone_bunker_tank_f";
+		initial_zone[ 6 ] = "zone_nml_1";
+		initial_zone[ 7 ] = "zone_nml_4";
+		initial_zone[ 8 ] = "zone_nml_0";
+		initial_zone[ 9 ] = "zone_nml_5";
+		initial_zone[ 10 ] = "zone_nml_celllar";
+		initial_zone[ 11 ] = "zone_bolt_stairs";
+		initial_zone[ 12 ] = "zone_nml_3";
+		initial_zone[ 13 ] = "zone_nml_2b";
+		initial_zone[ 14 ] = "zone_nml_6";
+		initial_zone[ 15 ] = "zone_nml_8";
+		initial_zone[ 16 ] = "zone_nml_10a";
+		initial_zone[ 17 ] = "zone_nml_10";
+		initial_zone[ 18 ] = "zone_nml_7";
+		initial_zone[ 19 ] = "zone_bunker_tank_a";
+		initial_zone[ 20 ] = "zone_bunker_tank_a1";
+		initial_zone[ 21 ] = "zone_bunker_tank_a2";
+		initial_zone[ 22 ] = "zone_bunker_tank_b";
+		initial_zone[ 23 ] = "zone_nml_9";
+		initial_zone[ 24 ] = "zone_air_stairs";
+		initial_zone[ 25 ] = "zone_nml_11";
+		initial_zone[ 26 ] = "zone_nml_12";
+		initial_zone[ 27 ] = "zone_nml_16";
+		initial_zone[ 28 ] = "zone_nml_17";
+		initial_zone[ 29 ] = "zone_nml_18";
+		initial_zone[ 30 ] = "zone_nml_19";
+		initial_zone[ 31 ] = "ug_bottom_zone";
+		initial_zone[ 32 ] = "zone_nml_13";
+		initial_zone[ 33 ] = "zone_nml_14";
+		initial_zone[ 34 ] = "zone_nml_15";
+	}
+	else if ( isDefined( level.customMap ) && level.customMap == "tank" )
+	{
+		initial_zone = [];
+		initial_zone[ 0 ] = "zone_village_0";
+		initial_zone[ 1 ] = "zone_village_5";
+		initial_zone[ 2 ] = "zone_village_5a";
+		initial_zone[ 3 ] = "zone_village_5b";
+		initial_zone[ 4 ] = "zone_village_1";
+		initial_zone[ 5 ] = "zone_village_4b";
+		initial_zone[ 6 ] = "zone_village_4a";
+		initial_zone[ 7 ] = "zone_village_4";
+	}
+	else if ( isDefined( level.customMap ) && level.customMap == "crazyplace" )
+	{
+		initial_zone = [];
+		initial_zone[ 0 ] = "zone_chamber_0";
+		initial_zone[ 1 ] = "zone_chamber_1";
+		initial_zone[ 2 ] = "zone_chamber_2";
+		initial_zone[ 3 ] = "zone_chamber_3";
+		initial_zone[ 4 ] = "zone_chamber_4";
+		initial_zone[ 5 ] = "zone_chamber_5";
+		initial_zone[ 6 ] = "zone_chamber_6";
+		initial_zone[ 7 ] = "zone_chamber_7";
+		initial_zone[ 8 ] = "zone_chamber_8";
+	}
+	else if (isdefined(level.customMap) && level.customMap == "maze")
+	{
+		initial_zone[initial_zone.size] = "zone_maze";
+		initial_zone[initial_zone.size] = "zone_mansion_backyard";
+		initial_zone[initial_zone.size] = "zone_maze_staircase";
+		initial_zone[initial_zone.size] = "zone_start";
+		initial_zone[initial_zone.size] = "zone_mansion";
+		initial_zone[initial_zone.size] = "zone_mansion_lawn";
+	}
 	if ( isarray( initial_zone ) )
 	{
 		for ( i = 0; i < initial_zone.size; i++ )
@@ -847,7 +937,7 @@ old_manage_zones( initial_zone ) //checked changed to match cerberus output
 	}
 }
 */
-create_spawner_list( zkeys ) //checked changed to match cerberus output
+create_spawner_list( zkeys ) //modified function
 {
 	level.zombie_spawn_locations = [];
 	level.inert_locations = [];
@@ -867,6 +957,163 @@ create_spawner_list( zkeys ) //checked changed to match cerberus output
 		{
 			for ( i = 0; i < zone.spawn_locations.size; i++ )
 			{
+				if(level.script == "zm_transit" && level.customMap != "vanilla")
+				{
+					if ( zone.spawn_locations[ i ].origin == ( -11447, -3424, 254.2 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					if ( zone.spawn_locations[ i ].origin == ( -10944, -3846, 221.14 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					if ( zone.spawn_locations[ i ].origin == ( -11093, 393, 192 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					if ( zone.spawn_locations[ i ].origin == ( -11347, -3134, 283.9 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11332.9, -2876.95, 207 );
+					}
+					if ( zone.spawn_locations[ i ].origin == ( -11182, -4384, 196.7 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11115, -3152, 207 );
+					}
+					if ( zone.spawn_locations[ i ].origin == ( -11251, -4397, 200.02 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11107.8, -1301, 184 );
+					}
+					if ( zone.spawn_locations[ i ].origin == ( 8394, -2545, -205.16 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( 10015, 6931, -571.7 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( 10249.4, 7691.71, -569.875 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( 9339, 6411, -566.9 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( 9993.29, 7486.83, -582.875 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( 9914, 8408, -576 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( 9993.29, 7550, -582.875 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( 9429, 5281, -539.6 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( 10015, 6931, -571.7 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( 13019.1, 7382.5, -754 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -3825, -6576, -52.7 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -4061.03, -6754.44, -58.0897 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -3450, -6559, -51.9 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -4060.93, -6968.64, -65.3446 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -4165, -6098, -64 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -4239.78, -6902.81, -57.0494 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -5058, -5902, -73.4 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -4846.77, -6906.38, 54.8145 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -6462, -7159, -64 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -6201.18, -7107.83, -59.7182 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -5130, -6512, -35.4 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -5396.36, -6801.88, -60.0821 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -6531, -6613, -54.4 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -6116.62, -6586.81, -50.8905 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -5373, -6231, -51.9 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -4827.92, -7137.19, -62.9082 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -5752, -6230, -53.4 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -5572.47, -6426, -39.1894 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -5540, -6508, -42 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -5789.51, -6935.81, -57.875 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -11093 , 393 , 192 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11431.3, -644.496, 192.125 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -10944, -3846, 221.14 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11351.7, -1988.58, 184.125 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -11251, -4397, 200.02 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11431.3, -644.496, 192.125 );
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -11334 , -5280, 212.7 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11600.6, -1918.41, 192.125 );
+						zone.spawn_locations[ i ].script_noteworthy = "riser_location";
+					}
+					else if (zone.spawn_locations[ i ].origin == ( -10836, 1195, 209.7 ) )
+					{
+						zone.spawn_locations[ i ].origin = ( -11241.2, -1118.76, 184.125 );
+					}
+					/*
+					else if ( zone.spawn_locations[ i ].origin == ( -10747, -63, 203.8 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -11347, -3134, 283.9 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -11447, -3424, 254.2 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -10761, 155, 236.8 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if ( zone.spawn_locations[ i ].origin == ( -11110, -2921, 195.79 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					*/
+					else if ( zone.spawn_locations[ i ].targetname == "zone_trans_diner_spawners")
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					if ( zone.spawn_locations[ i ].is_enabled )
+					{
+						level.zombie_spawn_locations[ level.zombie_spawn_locations.size ] = zone.spawn_locations[ i ];
+					}
+				}
+				else if (level.script == "zm_prison" && level.customMap != "vanilla")
+				{
+					if( zone.spawn_locations[ i ].origin == ( -1880.2, 5419.9, -55 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+					else if( zone.spawn_locations[ i ].origin == ( -1852.2, 5307.9, -55 ) )
+					{
+						zone.spawn_locations[ i ].is_enabled = 0;
+					}
+				}
 				if(zone.spawn_locations[ i ].is_enabled)
 				{
 					level.zombie_spawn_locations[level.zombie_spawn_locations.size] = zone.spawn_locations[i];
@@ -893,6 +1140,7 @@ create_spawner_list( zkeys ) //checked changed to match cerberus output
 					level.zombie_screecher_locations[level.zombie_screecher_locations.size] = zone.screecher_locations[x];
 				}
 			}
+			/*
 			for(x = 0; x < zone.avogadro_locations.size; x++)
 			{
 				if(zone.avogadro_locations[x].is_enabled)
@@ -900,6 +1148,7 @@ create_spawner_list( zkeys ) //checked changed to match cerberus output
 					level.zombie_avogadro_locations[level.zombie_avogadro_locations.size] = zone.avogadro_locations[x];
 				}
 			}
+			*/
 			for(x = 0; x < zone.quad_locations.size; x++)
 			{
 				if(zone.quad_locations[x].is_enabled)
@@ -1096,7 +1345,7 @@ is_player_in_zone( zone_name ) //checked changed to match cerberus output
 	zone = level.zones[ zone_name ];
 	for ( i = 0; i < zone.volumes.size; i++ )
 	{
-		if ( self istouching( level.zones[zone_name].volumes[ i ] ) && !self.sessionstate == "spectator" )
+		if ( self istouching( level.zones[ zone_name ].volumes[ i ] ) && self.sessionstate != "spectator")
 		{
 			return 1;
 		}
