@@ -37,9 +37,10 @@ precache()
 	maps/mp/zombies/_zm_equip_springpad::init( &"ZM_BURIED_EQ_SP_PHS", &"ZM_BURIED_EQ_SP_HTS" );
 	maps/mp/zombies/_zm_equip_subwoofer::init( &"ZM_BURIED_EQ_SW_PHS", &"ZM_BURIED_EQ_SW_HTS" );
 	maps/mp/zombies/_zm_equip_headchopper::init( &"ZM_BURIED_EQ_HC_PHS", &"ZM_BURIED_EQ_HC_HTS" );
-	level.springpad_attack_delay = 0,2;
+	level.springpad_attack_delay = 0.2;
 	maps/mp/zm_buried_fountain::init_fountain();
 	level thread perk_vulture_custom_scripts();
+	level thread override_zombie_count();
 }
 
 setup_buildables()
@@ -64,11 +65,11 @@ main()
 	level thread maps/mp/zombies/_zm_buildables::think_buildables();
 	level thread maps/mp/zm_buried_power::electric_switch();
 	level thread maps/mp/zm_buried_maze::maze_think();
-/#
+/*/#
 	level thread setup_temp_sloth_triggers();
 	level thread generator_open_sesame();
 	level thread fountain_open_sesame();
-#/
+#/*/
 	flag_wait( "initial_blackscreen_passed" );
 	level thread vo_level_start();
 	level thread vo_stay_topside();
@@ -78,9 +79,17 @@ main()
 	level thread piano_init();
 	level thread sliding_bookcase_init();
 	level thread quick_revive_solo_watch();
-	level thread zm_treasure_chest_init();
+	if(isdefined(level.customMap) && level.customMap == "vanilla")
+	{
+		level thread zm_treasure_chest_init();
+	}
+	if(isdefined(level.customMap) && level.customMap == "maze")
+	{
+		thread maze_reset();
+		level.zombie_weapons[ "time_bomb_zm" ].is_in_box = 0;
+	}
 	level thread maps/mp/zm_buried_ee::init_ghost_piano();
-	level thread buried_set_underground_lighting();
+	//level thread buried_set_underground_lighting();
 	exploder( 666 );
 	level.zm_traversal_override = ::zm_traversal_override;
 	level.zm_mantle_over_40_move_speed_override = ::mantle_over_40_move_speed_override;
@@ -101,6 +110,20 @@ main()
 		level.sloth.custom_box_move_func = ::sloth_box_move_show_vulture_fx;
 	}
 	maps/mp/zombies/_zm::register_player_damage_callback( ::classic_player_damage_callback );
+}
+
+maze_reset()
+{
+	level endon("end_game");
+	while(1)
+	{
+		level waittill("between_round_over");
+		if((level.round_number % 5) == 0)
+		{
+			level waittill("between_round_over");
+			maps/mp/zm_buried_maze::maze_do_perm_change();
+		}
+	}
 }
 
 vo_level_start()
@@ -136,7 +159,7 @@ vo_fall_down_hole()
 		}
 		else
 		{
-			wait 0,05;
+			wait 0.05;
 		}
 	}
 	while ( isDefined( player ) && isDefined( player.isspeaking ) && player.isspeaking )
@@ -202,7 +225,7 @@ generator_oil_lamp_control()
 		stop_exploder( 300 );
 		level notify( level.str_generator_power_runs_out_notify );
 		level.generator_is_active = 0;
-		wait 0,01;
+		wait 0.01;
 	}
 }
 
@@ -214,18 +237,18 @@ reset_generator_lerp_val()
 
 lerp_down_generator_light_levels( blinkout_time )
 {
-	wait_lights1 = blinkout_time * 0,05;
-	wait_delay1 = blinkout_time * 0,3;
-	wait_lights2 = blinkout_time * 0,1;
-	wait_delay2 = blinkout_time * 0,4;
-	wait_lights3 = blinkout_time * 0,15;
-	level thread lerp_generator_lights( wait_lights1, 1, 0,84 );
+	wait_lights1 = blinkout_time * 0.05;
+	wait_delay1 = blinkout_time * 0.3;
+	wait_lights2 = blinkout_time * 0.1;
+	wait_delay2 = blinkout_time * 0.4;
+	wait_lights3 = blinkout_time * 0.15;
+	level thread lerp_generator_lights( wait_lights1, 1, 0.84 );
 	level waittill( "generator_lerp_done" );
 	wait wait_delay1;
-	level thread lerp_generator_lights( wait_lights2, 0,84, 0,4 );
+	level thread lerp_generator_lights( wait_lights2, 0.84, 0.4 );
 	level waittill( "generator_lerp_done" );
 	wait wait_delay2;
-	level thread lerp_generator_lights( wait_lights3, 0,4, 0 );
+	level thread lerp_generator_lights( wait_lights3, 0.4, 0 );
 	level waittill( "generator_lerp_done" );
 }
 
@@ -256,7 +279,7 @@ lerp_generator_lights( total_time, start_val, end_val )
 				}
 				last_lerp = time;
 			}
-			wait 0,01;
+			wait 0.01;
 		}
 	}
 	level notify( "generator_lerp_done" );
@@ -325,9 +348,9 @@ collapsing_holes()
 			{
 				note = self.script_noteworthy;
 			}
-/#
+/*/#
 			println( "***!!!*** Set client field " + self.script_string + " Associated script_noteworthy " + note );
-#/
+#/*/
 		}
 		if ( isDefined( self.boards ) )
 		{
@@ -507,7 +530,7 @@ sliding_bookcase_think()
 		}
 		while ( isDefined( self.doors[ 0 ].door_moving ) || self.doors[ 0 ].door_moving && self sliding_bookcase_occupied() )
 		{
-			wait 0,1;
+			wait 0.1;
 		}
 		_a667 = self.doors;
 		_k667 = getFirstArrayKey( _a667 );
@@ -579,7 +602,7 @@ sliding_bookcase_activate( open )
 				}
 				dist = distance( self.origin, movetopos );
 				time = dist / speed;
-				q_time = time * 0,25;
+				q_time = time * 0.25;
 				if ( q_time > 1 )
 				{
 					q_time = 1;
@@ -657,21 +680,21 @@ sliding_bookcase_wobble( model )
 	{
 		if ( isDefined( self.doors[ 0 ].door_moving ) && self.doors[ 0 ].door_moving )
 		{
-			model rotateto( ( randomfloatrange( -2,5, 2,5 ), randomfloatrange( -0,5, 0,5 ), randomfloatrange( -0,5, 0,5 ) ), 0,5, 0,125, 0,125 );
-			wait ( 0,5 - 0,125 );
+			model rotateto( ( randomfloatrange( -2.5, 2.5 ), randomfloatrange( -0.5, 0.5 ), randomfloatrange( -0.5, 0.5 ) ), 0.5, 0.125, 0.125 );
+			wait ( 0.5 - 0.125 );
 			continue;
 		}
 		else
 		{
 			if ( isDefined( model.startang ) && model.angles != model.startang )
 			{
-				model rotateto( model.startang, 0,5, 0,125, 0,125 );
+				model rotateto( model.startang, 0.5, 0.125, 0.125 );
 				model waittill( "rotatedone" );
 				break;
 			}
 			else
 			{
-				wait 0,5;
+				wait 0.5;
 			}
 		}
 	}
@@ -780,9 +803,9 @@ pianothink()
 		self waittill( "trigger", who );
 		if ( who istouching( self ) )
 		{
-/#
+/*/#
 			iprintlnbold( "Playing Piano Key: " + note );
-#/
+#/*/
 			self playsound( "zmb_piano_" + note );
 		}
 	}
@@ -797,9 +820,9 @@ pianodamagethink()
 		type = random( noise_level );
 		if ( isDefined( who ) && isplayer( who ) )
 		{
-/#
+/*/#
 			iprintlnbold( "Piano Damage: " + type );
-#/
+#/*/
 			self playsound( "zmb_piano_damage_" + type );
 		}
 	}
@@ -853,27 +876,27 @@ zm_treasure_chest_init()
 
 generator_open_sesame()
 {
-/#
+/*/#
 	while ( 1 )
 	{
 		level waittill_any( "open_sesame", "generator_lights_on" );
 		level.oil_lamp_power = 60;
 #/
-	}
+	}*/
 }
 
 fountain_open_sesame()
 {
-/#
+/*/#
 	level waittill( "open_sesame" );
 	level notify( "courtyard_fountain_open" );
 	level notify( "_destroy_maze_fountain" );
-#/
+#/*/
 }
 
 setup_temp_sloth_triggers()
 {
-/#
+/*/#
 	sloth_triggers = getentarray( "sloth_barricade", "targetname" );
 	_a1073 = sloth_triggers;
 	_k1073 = getFirstArrayKey( _a1073 );
@@ -885,23 +908,23 @@ setup_temp_sloth_triggers()
 	}
 	level waittill_any( "open_sesame", "open_sloth_barricades" );
 	level notify( "jail_barricade_down" );
-#/
+#/*/
 }
 
 watch_opensesame()
 {
-/#
+/*/#
 	self endon( "death" );
 	script_flag = self.script_flag;
 	target = self.target;
 	level waittill_any( "open_sesame", "open_sloth_barricades" );
 	self open_barricade( script_flag, target );
-#/
+#/*/
 }
 
 open_barricade( script_flag, target )
 {
-/#
+/*/#
 	if ( isDefined( script_flag ) && level flag_exists( script_flag ) )
 	{
 		flag_set( script_flag );
@@ -936,7 +959,7 @@ open_barricade( script_flag, target )
 	{
 		self delete();
 #/
-	}
+	}*/
 }
 
 perk_vulture_custom_scripts()
@@ -983,9 +1006,9 @@ mantle_over_40_move_speed_override()
 			traversealias = "barrier_walk_floating";
 			break;
 		default:
-/#
+/*/#
 			assertmsg( "Zombie move speed of '" + self.zombie_move_speed + "' is not supported for mantle_over_40." );
-#/
+#/*/
 	}
 	return traversealias;
 }
@@ -1041,9 +1064,9 @@ store_worldstate_for_minigame()
 	flag_set( "sq_minigame_active" );
 	if ( isDefined( level._world_state_stored_for_minigame ) )
 	{
-/#
+/*/#
 		assertmsg( "store_worldstate_for_minigame called more than once." );
-#/
+#/*/
 		return;
 	}
 	flag_set( "time_bomb_stores_door_state" );
@@ -1057,13 +1080,13 @@ restore_worldstate_for_minigame()
 {
 	if ( !isDefined( level._world_state_stored_for_minigame ) )
 	{
-/#
+/*/#
 		assertmsg( "restore_worldstate_for_minigame called with no prior call to store_worldstate_for_minigame." );
-#/
+#/*/
 		return;
 	}
 	level.timebomb_override_struct = level._world_state_stored_for_minigame;
-	level.round_spawn_func = ::maps/mp/zombies/_zm::round_spawning;
+	level.round_spawn_func = maps/mp/zombies/_zm::round_spawning;
 	maps/mp/zombies/_zm_weap_time_bomb::time_bomb_restores_saved_data( 0, level._world_state_stored_for_minigame );
 	level thread delay_destroy_timebomb_override_structs();
 	blockers = getentarray( "main_street_blocker", "targetname" );
@@ -1347,9 +1370,9 @@ _append_name( str_name, str_name_append )
 
 blocker_model_promote()
 {
-/#
+/*/#
 	assert( isDefined( self.model ), "model not set for minigame blocker at " + self.origin );
-#/
+#/*/
 	m_blocker = spawn( "script_model", self.origin + vectorScale( ( 0, 0, -1 ), 100 ) );
 	if ( !isDefined( self.angles ) )
 	{
@@ -1359,14 +1382,14 @@ blocker_model_promote()
 	m_blocker setmodel( self.model );
 	m_blocker.targetname = self.targetname;
 	m_blocker.script_noteworthy = self.script_noteworthy;
-	m_blocker movez( 100, 5, 0,5, 0,5 );
-	earthquake( 0,3, 5, self.origin + vectorScale( ( 0, 0, -1 ), 100 ), 128 );
+	m_blocker movez( 100, 5, 0.5, 0.5 );
+	earthquake( 0.3, 5, self.origin + vectorScale( ( 0, 0, -1 ), 100 ), 128 );
 }
 
 blocker_model_remove()
 {
-	earthquake( 0,3, 5, self.origin + vectorScale( ( 0, 0, -1 ), 100 ), 128 );
-	self movez( -100, 5, 0,5, 0,5 );
+	earthquake( 0.3, 5, self.origin + vectorScale( ( 0, 0, -1 ), 100 ), 128 );
+	self movez( -100, 5, 0.5, 0.5 );
 	self waittill( "movedone" );
 	if ( isDefined( self ) )
 	{
@@ -1423,7 +1446,7 @@ close_open_door()
 				self.doors[ i ].saved_angles = self.doors[ i ].angles;
 				if ( isDefined( self.doors[ i ].script_string ) && self.doors[ i ].script_string == "rotate" )
 				{
-					self.doors[ i ] rotateto( self.doors[ i ].og_angles, 0,05, 0, 0 );
+					self.doors[ i ] rotateto( self.doors[ i ].og_angles, 0.05, 0, 0 );
 				}
 				self.doors[ i ] solid();
 				self.doors[ i ] disconnectpaths();
@@ -1508,9 +1531,9 @@ minigame_blockers_precache()
 	while ( isDefined( _k1743 ) )
 	{
 		struct = _a1743[ _k1743 ];
-/#
+/*/#
 		assert( isDefined( struct.model ), "blocker struct is missing model at " + struct.origin );
-#/
+#/*/
 		precachemodel( struct.model );
 		_k1743 = getNextArrayKey( _a1743, _k1743 );
 	}
@@ -1627,9 +1650,9 @@ insta_kill_player( perks_can_respawn_player, kill_if_falling )
 				{
 					self dodamage( self.health + 1000, ( 0, 0, -1 ) );
 				}
-				wait 0,5;
+				wait 0.5;
 				self freezecontrols( 1 );
-				wait 0,25;
+				wait 0.25;
 				self setorigin( v_point + vectorScale( ( 0, 0, -1 ), 20 ) );
 				self.angles = v_angles;
 				if ( in_last_stand )
@@ -1712,11 +1735,7 @@ get_insta_kill_spawn_point_from_nodes( v_origin, min_radius, max_radius, max_hei
 						}
 					}
 				}
-			}
-			else
-			{
 				i--;
-
 			}
 		}
 	}
@@ -1724,7 +1743,7 @@ get_insta_kill_spawn_point_from_nodes( v_origin, min_radius, max_radius, max_hei
 	{
 		level.chugabud_spawn_struct.origin = found_node.origin;
 		v_dir = vectornormalize( v_origin - level.chugabud_spawn_struct.origin );
-		level.chugabud_spawn_struct.angles = vectorToAngle( v_dir );
+		level.chugabud_spawn_struct.angles = vectorToAngles( v_dir );
 		return 1;
 	}
 	return 0;
@@ -1786,14 +1805,14 @@ buried_set_underground_lighting()
 				i++;
 			}
 		}
-		wait 0,1;
+		wait 0.1;
 	}
 }
 
 lsat_trigger_tweak()
 {
 	flag_wait_any( "start_zombie_round_logic", "start_encounters_match_logic" );
-	wait 0,25;
+	wait 0.25;
 	candidate_list = [];
 	_a2138 = level.zones;
 	_k2138 = getFirstArrayKey( _a2138 );
@@ -1857,5 +1876,45 @@ sloth_box_move_show_vulture_fx( b_show_fx )
 	if ( isDefined( level.chests ) && level.chests.size > 0 && isDefined( level.chest_index ) )
 	{
 		level.chests[ level.chest_index ].zbarrier maps/mp/zombies/_zm_perk_vulture::vulture_perk_shows_mystery_box( b_show_fx );
+	}
+}
+
+override_zombie_count() //custom function
+{
+	level endon( "end_game" );
+	level.speed_change_round = undefined;
+	thread increase_zombie_speed();
+	for ( ;; )
+	{
+		level waittill_any( "start_of_round", "intermission", "check_count" );
+		if ( isdefined(level.customMap) && level.customMap == "maze" )
+		{
+			if ( level.round_number <= 2 )
+			{
+				level.zombie_move_speed = 20;
+			}
+		}
+	}
+}
+
+increase_zombie_speed()
+{
+	if ( isdefined(level.customMap) && level.customMap != "maze" )
+	{
+		return;
+	}
+	while ( 1 )
+	{
+		zombies = get_round_enemy_array();
+		for ( i = 0; i < zombies.size; i++ )
+		{
+			zombies[ i ].closestPlayer = get_closest_valid_player( zombies[ i ].origin );
+		}
+		zombies = get_round_enemy_array();
+		for ( i = 0; i < zombies.size; i++ )
+		{
+			zombies[ i ] set_zombie_run_cycle( "sprint" );
+		}
+		wait 1;
 	}
 }
