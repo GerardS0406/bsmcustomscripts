@@ -1,3 +1,4 @@
+//checked includes match cerberus output
 #include maps/mp/zombies/_zm_audio;
 #include maps/mp/zombies/_zm_stats;
 #include maps/mp/zombies/_zm_weapon_locker;
@@ -48,24 +49,31 @@ precache() //checked matches cerberus output
 	registerclientfield( "allplayers", "screecher_sq_lights", 1, 1, "int" );
 	registerclientfield( "allplayers", "screecher_maxis_lights", 1, 1, "int" );
 	registerclientfield( "allplayers", "sq_tower_sparks", 1, 1, "int" );
-	onplayerconnect_callback( ::maps/mp/zm_transit_bus::onplayerconnect );
-	onplayerconnect_callback( ::maps/mp/zm_transit_ai_screecher::portal_player_watcher );
+	onplayerconnect_callback( maps/mp/zm_transit_bus::onplayerconnect );
+	onplayerconnect_callback( maps/mp/zm_transit_ai_screecher::portal_player_watcher );
 	level thread maps/mp/zombies/_zm_banking::init();
+	level thread override_zombie_count();
 }
 
-main() //checked partially changed to match cerberus output did not use continues in foreaches see github for more info
+main() //modified function
 {
+	map = level.customMap;
 	level.ta_vaultfee = 100;
 	level.ta_tellerfee = 100;
 	if ( !isDefined( level.custom_ai_type ) )
 	{
 		level.custom_ai_type = [];
 	}
-	level.custom_ai_type[ level.custom_ai_type.size ] = ::maps/mp/zombies/_zm_ai_screecher::init;
-	level.custom_ai_type[ level.custom_ai_type.size ] = ::maps/mp/zombies/_zm_ai_avogadro::init;
-	level.enemy_location_override_func = ::maps/mp/zm_transit_bus::enemy_location_override;
-	level.adjust_enemyoverride_func = ::maps/mp/zm_transit_bus::adjust_enemyoverride;
-	level.closest_player_override = ::closest_player_transit;
+	level.custom_ai_type[ level.custom_ai_type.size ] = maps/mp/zombies/_zm_ai_screecher::init;
+	if(isDefined(map) && map == "vanilla")
+		level.custom_ai_type[ level.custom_ai_type.size ] = maps/mp/zombies/_zm_ai_avogadro::init;
+	if ( !isDefined( level.vsmgr_prio_overlay_zm_ai_avogadro_electrified ) )
+    {
+        level.vsmgr_prio_overlay_zm_ai_avogadro_electrified = 75;
+    }
+    maps/mp/_visionset_mgr::vsmgr_register_info( "overlay", "zm_ai_avogadro_electrified", 1, level.vsmgr_prio_overlay_zm_ai_avogadro_electrified, 15, 1, maps/mp/_visionset_mgr::vsmgr_duration_lerp_thread_per_player, 0 );
+	level.enemy_location_override_func = maps/mp/zm_transit_bus::enemy_location_override;
+	level.adjust_enemyoverride_func = maps/mp/zm_transit_bus::adjust_enemyoverride;
 	door_triggers = getentarray( "electric_door", "script_noteworthy" );
 	foreach ( trigger in door_triggers )
 	{
@@ -90,7 +98,8 @@ main() //checked partially changed to match cerberus output did not use continue
 	}
 	level.zm_traversal_override = ::zm_traversal_override;
 	level.the_bus = getent( "the_bus", "targetname" );
-	level thread init_bus();
+	if(isDefined(map) && map == "vanilla")
+		level thread init_bus();
 	level thread maps/mp/zm_transit_sq::start_transit_sidequest();
 	level thread inert_zombies_init();
 	level thread maps/mp/zm_transit_power::initializepower();
@@ -100,14 +109,14 @@ main() //checked partially changed to match cerberus output did not use continue
 	level.zombie_check_suppress_gibs = maps/mp/zm_transit_bus::shouldsuppressgibs;
 	level thread transit_vault_breach_init();
 	level thread maps/mp/zm_transit_distance_tracking::zombie_tracking_init();
-	level thread solo_tombstone_removal();
+	//level thread maps/mp/zm_transit_utility::solo_tombstone_removal();
 	level thread collapsing_bridge_init();
 	level thread banking_and_weapon_locker_main();
 	level thread bus_roof_damage_init();
 	level thread diner_hatch_access();
 	level thread maps/mp/zombies/_zm_buildables::think_buildables();
 	setdvar( "r_rimIntensity_debug", 1 );
-	setdvar( "r_rimIntensity", 3,5 );
+	setdvar( "r_rimIntensity", 3.5 );
 	level thread zm_traversal_override_ignores();
 	level thread maps/mp/zombies/_zm::post_main();
 	level.spectator_respawn_custom_score = ::callback_spectator_respawn_custom_score;
@@ -116,6 +125,14 @@ main() //checked partially changed to match cerberus output did not use continue
 	level.custom_player_death_vo_func = ::transit_custom_death_vox;
 	level.custom_powerup_vo_response = ::transit_custom_powerup_vo_response;
 	level.zombie_vars[ "zombie_intermission_time" ] = 12;
+	flag_wait( "initial_blackscreen_passed" );
+	if(isDefined(map) && map != "vanilla")
+		maps/mp/zombies/_zm_game_module::turn_power_on_and_open_doors(); //added to turn on the power and open doors
+	flag_wait( "start_zombie_round_logic" );
+	wait 1;
+	if(isDefined(map) && map != "vanilla")
+		level thread maps/mp/zm_transit::delete_bus_pieces();
+	
 }
 
 zm_traversal_override_ignores() //checked matches cerberus output
@@ -128,7 +145,7 @@ zm_traversal_override( traversealias ) //checked matches cerberus output
 	sndalias = undefined;
 	chance = 0;
 	sndchance = 0;
-	if ( isDefined( self.isscreecher ) && !self.isscreecher && isDefined( self.is_avogadro ) && !self.is_avogadro )
+	if ( !is_true( self.isscreecher ) && !is_true( self.is_avogadro ) )
 	{
 		if ( isDefined( self.traversestartnode ) && isDefined( self.traversestartnode.script_string ) && self.traversestartnode.script_string == "ignore_traverse_override" )
 		{
@@ -137,7 +154,7 @@ zm_traversal_override( traversealias ) //checked matches cerberus output
 		switch( traversealias )
 		{
 			case "jump_down_48":
-				if ( isDefined( self.has_legs ) && self.has_legs )
+				if ( is_true( self.has_legs ) )
 				{
 					suffix = "_stumble";
 					chance = 0;
@@ -147,7 +164,7 @@ zm_traversal_override( traversealias ) //checked matches cerberus output
 			case "jump_down_190":
 			case "jump_down_222":
 			case "jump_down_90":
-				if ( isDefined( self.has_legs ) && self.has_legs )
+				if ( is_true( self.has_legs ) )
 				{
 					suffix = "_stumble";
 					chance = 30;
@@ -183,7 +200,7 @@ init_bus() //checked matches cerberus output
 
 closest_player_transit( origin, players ) //checked changed to match cerberus output
 {
-	if ( isDefined( level.the_bus ) && level.the_bus.numaliveplayersridingbus > 0 || isDefined( level.calc_closest_player_using_paths ) && !level.calc_closest_player_using_paths )
+	if ( isDefined( level.the_bus ) && level.the_bus.numaliveplayersridingbus > 0 || !is_true( level.calc_closest_player_using_paths ) )
 	{
 		player = getclosest( origin, players );
 	}
@@ -389,7 +406,7 @@ bus_roof_damage() //checked changed to match cerberus output
 	}
 }
 
-diner_hatch_access() //checked matches cerberus output
+diner_hatch_access() //modified function
 {
 	diner_hatch = getent( "diner_hatch", "targetname" );
 	diner_hatch_col = getent( "diner_hatch_collision", "targetname" );
@@ -401,7 +418,8 @@ diner_hatch_access() //checked matches cerberus output
 	diner_hatch hide();
 	diner_hatch_mantle.start_origin = diner_hatch_mantle.origin;
 	diner_hatch_mantle.origin += vectorScale( ( 0, 0, 0 ), 500 );
-	player = wait_for_buildable( "dinerhatch" );
+	if(isDefined(level.customMap) && level.customMap == "vanilla")
+		player = wait_for_buildable( "dinerhatch" );
 	diner_hatch show();
 	diner_hatch_col delete();
 	diner_hatch_mantle.origin = diner_hatch_mantle.start_origin;
@@ -410,6 +428,7 @@ diner_hatch_access() //checked matches cerberus output
 
 inert_zombies_init() //checked matches cerberus output
 {
+	return; //disabled
 	inert_spawn_location = getstructarray( "inert_location", "script_noteworthy" );
 	if ( isDefined( inert_spawn_location ) )
 	{
@@ -535,8 +554,114 @@ transit_custom_powerup_vo_response( powerup_player, powerup ) //checked partiall
 		}
 		else if ( distancesquared( player.origin, powerup_player.origin ) < dist )
 		{
-			player do_player_general_vox( "general", "exert_laugh", 10, 5 );
+			//player do_player_general_vox( "general", "exert_laugh", 10, 5 );
 		}
 	}
 }
+
+override_zombie_count() //custom function
+{
+	level endon( "end_game" );
+	level.speed_change_round = undefined;
+	
+	if( level.customMap == "house" || level.customMap == "cornfield" )
+	{
+		level.zombie_vars[ "zombie_spawn_delay" ] = 0.08;
+	}
+	thread increase_cornfield_zombie_speed();
+	for ( ;; )
+	{
+		level waittill_any( "start_of_round", "intermission", "check_count" );
+		level thread adjust_zombie_count();
+		if ( level.customMap == "house" )
+		{
+			if ( level.round_number <= 2 )
+			{
+				level.zombie_move_speed = 20;
+			}
+		}
+		else if ( level.customMap == "cornfield" )
+		{
+			if ( level.round_number == 1 )
+			{
+				level.zombie_move_speed = 20;
+			}
+			else if ( level.round_number <= 3 )
+			{
+				level.zombie_move_speed = 30;
+			}
+		}
+	}
+}
+
+zombie_speed_up_distance_check()
+{
+	if ( distance( self.origin, self.closestPlayer.origin ) > 1000 )
+	{
+		return 1;
+	}
+	return 0;
+}
+
+increase_cornfield_zombie_speed()
+{
+	if ( level.customMap != "cornfield" && level.customMap != "house" )
+	{
+		return;
+	}
+	while ( 1 )
+	{
+		zombies = get_round_enemy_array();
+		for ( i = 0; i < zombies.size; i++ )
+		{
+			zombies[ i ].closestPlayer = get_closest_valid_player( zombies[ i ].origin );
+		}
+		zombies = get_round_enemy_array();
+		for ( i = 0; i < zombies.size; i++ )
+		{
+			if ( zombies[ i ] zombie_speed_up_distance_check() )
+			{
+				zombies[ i ] set_zombie_run_cycle( "chase_bus" );
+			}
+			else if ( zombies[ i ].zombie_move_speed != "sprint" )
+			{
+				zombies[ i ] set_zombie_run_cycle( "sprint" );
+			}
+		}
+		wait 1;
+	}
+}
+
+adjust_zombie_count() //custom function
+{
+	if ( level.players.size == 8 )
+	{
+		level.zombie_ai_limit = 32;
+		level.zombie_vars["zombie_ai_per_player"] = 3;
+	}
+	else if ( level.players.size == 7 )
+	{
+		level.zombie_ai_limit = 30;
+		level.zombie_vars["zombie_ai_per_player"] = 4;
+	}
+	else if ( level.players.size == 6 )
+	{
+		level.zombie_ai_limit = 28;
+		level.zombie_vars["zombie_ai_per_player"] = 5;
+	}
+	else if ( level.players.size == 5 )
+	{
+		level.zombie_ai_limit = 26;
+		level.zombie_vars["zombie_ai_per_player"] = 5;
+	}
+	else
+	{
+		level.zombie_ai_limit = 24;
+		level.zombie_vars["zombie_ai_per_player"] = 6;
+	}
+}
+
+
+
+
 
