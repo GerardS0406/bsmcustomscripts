@@ -23,6 +23,8 @@ init_shovel() //checked changed to match cerberus output
 	maps/mp/zombies/_zm_audio_announcer::createvox( "blood_money", "powerup_blood_money" );
 	onplayerconnect_callback( ::init_shovel_player );
 	a_shovel_pos = getstructarray( "shovel_location", "targetname" );
+	logline1 = "number of shovel locations: " + a_shovel_pos.size + "\n";
+	logprint( logline1 );
 	a_shovel_zone = [];
 	foreach ( s_shovel_pos in a_shovel_pos )
 	{
@@ -36,6 +38,8 @@ init_shovel() //checked changed to match cerberus output
 	{
 		s_pos = a_zone[ randomint( a_zone.size ) ];
 		m_shovel = spawn( "script_model", s_pos.origin );
+		if(isdefined(level.customMap) && level.customMap != "vanilla")
+			m_shovel.origin = (0,0,-10000);
 		m_shovel.angles = s_pos.angles;
 		m_shovel setmodel( "p6_zm_tm_shovel" );
 		generate_shovel_unitrigger( m_shovel );
@@ -125,7 +129,10 @@ shovel_unitrigger_think() //checked changed to match cerberus output
 			e_player playsound( "zmb_craftable_pickup" );
 			e_player dig_reward_dialog( "pickup_shovel" );
 			n_player = e_player getentitynumber() + 1;
-			level setclientfield( "shovel_player" + n_player, 1 );
+			if ( n_player <= 4 )
+			{
+				level setclientfield( "shovel_player" + n_player, 1 );
+			}
 			e_player thread dig_disconnect_watch( n_player, self.stub.e_shovel.origin, self.stub.e_shovel.angles );
 			self.stub.e_shovel delete();
 			maps/mp/zombies/_zm_unitrigger::unregister_unitrigger( self.stub );
@@ -166,8 +173,11 @@ unitrigger_stub_show_hint_prompt_valid( e_player ) //checked matches cerberus ou
 dig_disconnect_watch( n_player, v_origin, v_angles ) //checked matches cerberus output
 {
 	self waittill( "disconnect" );
-	level setclientfield( "shovel_player" + n_player, 0 );
-	level setclientfield( "helmet_player" + n_player, 0 );
+	if ( n_player <= 4 )
+	{
+		level setclientfield( "shovel_player" + n_player, 0 );
+		level setclientfield( "helmet_player" + n_player, 0 );
+	}
 	m_shovel = spawn( "script_model", v_origin );
 	m_shovel.angles = v_angles;
 	m_shovel setmodel( "p6_zm_tm_shovel" );
@@ -177,6 +187,8 @@ dig_disconnect_watch( n_player, v_origin, v_angles ) //checked matches cerberus 
 dig_spots_init() //checked changed to match cerberus output
 {
 	flag_wait( "start_zombie_round_logic" );
+	if(isdefined(level.customMap) && level.customMap != "vanilla")
+		return;
 	level.n_dig_spots_cur = 0;
 	level.n_dig_spots_max = 15;
 	level.a_dig_spots = getstructarray( "dig_spot", "targetname" );
@@ -343,7 +355,10 @@ waittill_dug( s_dig_spot ) //checked changed to match cerberus output
 						{
 							player.dig_vars[ "has_helmet" ] = 1;
 							n_player = player getentitynumber() + 1;
-							level setclientfield( "helmet_player" + n_player, 1 );
+							if ( n_player <= 4 )
+							{
+								level setclientfield( "helmet_player" + n_player, 1 );
+							}
 							player playsoundtoplayer( "zmb_squest_golden_anything", player );
 							player maps/mp/zombies/_zm_stats::increment_client_stat( "tomb_golden_hard_hat", 0 );
 							player maps/mp/zombies/_zm_stats::increment_player_stat( "tomb_golden_hard_hat" );
@@ -385,7 +400,10 @@ waittill_dug( s_dig_spot ) //checked changed to match cerberus output
 					player.dig_vars[ "has_upgraded_shovel" ] = 1;
 					player thread ee_zombie_blood_dig();
 					n_player = player getentitynumber() + 1;
-					level setclientfield( "shovel_player" + n_player, 2 );
+					if ( n_player <= 4 )
+					{
+						level setclientfield( "shovel_player" + n_player, 2 );
+					}
 					player playsoundtoplayer( "zmb_squest_golden_anything", player );
 					player maps/mp/zombies/_zm_stats::increment_client_stat( "tomb_golden_shovel", 0 );
 					player maps/mp/zombies/_zm_stats::increment_player_stat( "tomb_golden_shovel" );
@@ -405,7 +423,7 @@ dig_up_zombie( player, s_dig_spot ) //checked changed to match cerberus output
 	e_linker.origin = ai_zombie.origin;
 	e_linker.angles = ai_zombie.angles;
 	ai_zombie linkto( e_linker );
-	e_linker moveto( player.origin + vectorScale( ( 1, 1, 0 ), 100 ), 0.1 );
+	e_linker moveto( player.origin + vectorScale( ( 1, 1, 0 ), 100 ), 0,1 );
 	e_linker waittill( "movedone" );
 	ai_zombie unlink();
 	e_linker delete();
@@ -815,196 +833,11 @@ dig_set_powerup_spawned( str_powerup ) //checked matches cerberus output
 
 setup_dig_devgui() //dev call skipped
 {
-	/*
-/#
-	setdvar( "give_shovel", "off" );
-	setdvar( "give_golden_shovel", "off" );
-	setdvar( "give_helmet", "off" );
-	setdvar( "spawn_max_mounds", "off" );
-	setdvar( "spawn_all_mounds", "off" );
-	setdvar( "test_blood_mounds", "off" );
-	setdvar( "force_weather_rain", "off" );
-	setdvar( "force_weather_snow", "off" );
-	setdvar( "force_weather_none", "off" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Digging:1/Give Shovel:1" "give_shovel on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Digging:1/Give Golden Shovel:2" "give_golden_shovel on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Digging:1/Give Helmet:3" "give_helmet on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Digging:1/Spawn Max Mounds:4" "spawn_max_mounds on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Digging:1/Spawn All Mounds:5" "spawn_all_mounds on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Digging:1/Test Blood Mounds:6" "test_blood_mounds on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Weather:1/Rain:1" "force_weather_rain on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Weather:1/Snow:2" "force_weather_snow on"\n" );
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Weather:1/Clear:3" "force_weather_none on"\n" );
-	level thread watch_devgui_dig();
-#/
-	*/
 }
 
 watch_devgui_dig() //dev call skipped
 {
-	/*
-/#
-	while ( 1 )
-	{
-		while ( getDvar( "give_shovel" ) == "on" )
-		{
-			setdvar( "give_shovel", "off" );
-			_a1131 = getplayers();
-			_k1131 = getFirstArrayKey( _a1131 );
-			while ( isDefined( _k1131 ) )
-			{
-				player = _a1131[ _k1131 ];
-				player.dig_vars[ "has_shovel" ] = 1;
-				n_player = player getentitynumber() + 1;
-				level setclientfield( "shovel_player" + n_player, 1 );
-				_k1131 = getNextArrayKey( _a1131, _k1131 );
-			}
-		}
-		while ( getDvar( "give_golden_shovel" ) == "on" )
-		{
-			setdvar( "give_golden_shovel", "off" );
-			_a1141 = getplayers();
-			_k1141 = getFirstArrayKey( _a1141 );
-			while ( isDefined( _k1141 ) )
-			{
-				player = _a1141[ _k1141 ];
-				player.dig_vars[ "has_shovel" ] = 1;
-				player.dig_vars[ "has_upgraded_shovel" ] = 1;
-				player thread ee_zombie_blood_dig();
-				n_player = player getentitynumber() + 1;
-				level setclientfield( "shovel_player" + n_player, 2 );
-				_k1141 = getNextArrayKey( _a1141, _k1141 );
-			}
-		}
-		while ( getDvar( "give_helmet" ) == "on" )
-		{
-			setdvar( "give_helmet", "off" );
-			_a1153 = getplayers();
-			_k1153 = getFirstArrayKey( _a1153 );
-			while ( isDefined( _k1153 ) )
-			{
-				player = _a1153[ _k1153 ];
-				player.dig_vars[ "has_helmet" ] = 1;
-				n_player = player getentitynumber() + 1;
-				level setclientfield( "helmet_player" + n_player, 1 );
-				_k1153 = getNextArrayKey( _a1153, _k1153 );
-			}
-		}
-		while ( getDvar( "spawn_max_mounds" ) == "on" )
-		{
-			setdvar( "spawn_max_mounds", "off" );
-			a_dig_spots = array_randomize( level.a_dig_spots );
-			i = 0;
-			while ( i < a_dig_spots.size )
-			{
-				if ( is_true( a_dig_spots[ i ].dug ) && level.n_dig_spots_cur <= level.n_dig_spots_max )
-				{
-					a_dig_spots[ i ].dug = undefined;
-					a_dig_spots[ i ] thread dig_spot_spawn();
-					wait_network_frame();
-				}
-				i++;
-			}
-		}
-		while ( getDvar( "spawn_all_mounds" ) == "on" )
-		{
-			setdvar( "spawn_all_mounds", "off" );
-			a_dig_spots = array_randomize( level.a_dig_spots );
-			i = 0;
-			while ( i < a_dig_spots.size )
-			{
-				if ( is_true( a_dig_spots[ i ].dug ) )
-				{
-					a_dig_spots[ i ].dug = undefined;
-					a_dig_spots[ i ] thread dig_spot_spawn();
-					wait_network_frame();
-				}
-				i++;
-			}
-		}
-		while ( getDvar( "test_blood_mounds" ) == "on" )
-		{
-			setdvar( "test_blood_mounds", "off" );
-			a_z_spots = getstructarray( "zombie_blood_dig_spot", "targetname" );
-			_a1193 = a_z_spots;
-			_k1193 = getFirstArrayKey( _a1193 );
-			while ( isDefined( _k1193 ) )
-			{
-				s_spot = _a1193[ _k1193 ];
-				s_spot.m_dig = spawn( "script_model", s_spot.origin + vectorScale( ( 0, 0, -1 ), 40 ) );
-				s_spot.m_dig.angles = s_spot.angles;
-				s_spot.m_dig setmodel( "p6_zm_tm_dig_mound_blood" );
-				s_spot.m_dig moveto( s_spot.origin, 3, 0, 1 );
-				wait_network_frame();
-				_k1193 = getNextArrayKey( _a1193, _k1193 );
-			}
-		}
-		while ( getDvar( "force_weather_rain" ) == "on" )
-		{
-			setdvar( "force_weather_rain", "off" );
-			level.weather_snow = 0;
-			level.weather_rain = 5;
-			level.weather_vision = 1;
-			level setclientfield( "rain_level", level.weather_rain );
-			level setclientfield( "snow_level", level.weather_snow );
-			wait 1;
-			_a1212 = getplayers();
-			_k1212 = getFirstArrayKey( _a1212 );
-			while ( isDefined( _k1212 ) )
-			{
-				player = _a1212[ _k1212 ];
-				if ( is_player_valid( player, 0, 1 ) )
-				{
-					player set_weather_to_player();
-				}
-				_k1212 = getNextArrayKey( _a1212, _k1212 );
-			}
-		}
-		while ( getDvar( "force_weather_snow" ) == "on" )
-		{
-			setdvar( "force_weather_snow", "off" );
-			level.weather_snow = 5;
-			level.weather_rain = 0;
-			level.weather_vision = 2;
-			level setclientfield( "rain_level", level.weather_rain );
-			level setclientfield( "snow_level", level.weather_snow );
-			wait 1;
-			_a1229 = getplayers();
-			_k1229 = getFirstArrayKey( _a1229 );
-			while ( isDefined( _k1229 ) )
-			{
-				player = _a1229[ _k1229 ];
-				if ( is_player_valid( player, 0, 1 ) )
-				{
-					player set_weather_to_player();
-				}
-				_k1229 = getNextArrayKey( _a1229, _k1229 );
-			}
-		}
-		while ( getDvar( "force_weather_none" ) == "on" )
-		{
-			setdvar( "force_weather_none", "off" );
-			level.weather_snow = 0;
-			level.weather_rain = 0;
-			level.weather_vision = 3;
-			level setclientfield( "rain_level", level.weather_rain );
-			level setclientfield( "snow_level", level.weather_snow );
-			wait 1;
-			_a1246 = getplayers();
-			_k1246 = getFirstArrayKey( _a1246 );
-			while ( isDefined( _k1246 ) )
-			{
-				player = _a1246[ _k1246 ];
-				if ( is_player_valid( player, 0, 1 ) )
-				{
-					player set_weather_to_player();
-				}
-				_k1246 = getNextArrayKey( _a1246, _k1246 );
-			}
-		}
-		wait 0,05;
-#/
-	}
-	*/
 }
+
+
 

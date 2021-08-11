@@ -42,22 +42,31 @@ init_craftables() //checked changed to match cerberus output
 	flag_init( "staff_lightning_zm_enabled" );
 	flag_init( "staff_water_zm_enabled" );
 	register_clientfields();
-	add_zombie_craftable( "equip_dieseldrone_zm", &"ZM_TOMB_CRQ", &"ZM_TOMB_CRQ", &"ZM_TOMB_TQ", ::onfullycrafted_quadrotor, 1 );
-	add_zombie_craftable_vox_category( "equip_dieseldrone_zm", "build_dd" );
-	make_zombie_craftable_open( "equip_dieseldrone_zm", "veh_t6_dlc_zm_quadrotor", ( 0, 0, 0 ), ( 0, -4, 10 ) );
-	add_zombie_craftable( "tomb_shield_zm", &"ZM_TOMB_CRRI", undefined, &"ZOMBIE_BOUGHT_RIOT", undefined, 1 );
-	add_zombie_craftable_vox_category( "tomb_shield_zm", "build_zs" );
-	make_zombie_craftable_open( "tomb_shield_zm", "t6_wpn_zmb_shield_dlc4_dmg0_world", vectorScale( ( 0, -1, 0 ), 90 ), ( 0, 0, level.riotshield_placement_zoffset ) );
-	add_zombie_craftable( "elemental_staff_fire", &"ZM_TOMB_CRF", &"ZM_TOMB_INS", &"ZM_TOMB_BOF", ::staff_fire_fullycrafted, 1 );
-	add_zombie_craftable_vox_category( "elemental_staff_fire", "fire_staff" );
-	add_zombie_craftable( "elemental_staff_air", &"ZM_TOMB_CRA", &"ZM_TOMB_INS", &"ZM_TOMB_BOA", ::staff_air_fullycrafted, 1 );
-	add_zombie_craftable_vox_category( "elemental_staff_air", "air_staff" );
-	add_zombie_craftable( "elemental_staff_lightning", &"ZM_TOMB_CRL", &"ZM_TOMB_INS", &"ZM_TOMB_BOL", ::staff_lightning_fullycrafted, 1 );
-	add_zombie_craftable_vox_category( "elemental_staff_lightning", "light_staff" );
-	add_zombie_craftable( "elemental_staff_water", &"ZM_TOMB_CRW", &"ZM_TOMB_INS", &"ZM_TOMB_BOW", ::staff_water_fullycrafted, 1 );
-	add_zombie_craftable_vox_category( "elemental_staff_water", "ice_staff" );
-	add_zombie_craftable( "gramophone", &"ZM_TOMB_CRAFT_GRAMOPHONE", &"ZM_TOMB_CRAFT_GRAMOPHONE", &"ZM_TOMB_BOUGHT_GRAMOPHONE", undefined, 0 );
-	add_zombie_craftable_vox_category( "gramophone", "gramophone" );
+	if(isdefined(level.customMap) && level.customMap == "vanilla")
+	{
+		add_zombie_craftable( "equip_dieseldrone_zm", &"ZM_TOMB_CRQ", &"ZM_TOMB_CRQ", &"ZM_TOMB_TQ", ::onfullycrafted_quadrotor, 1 );
+		add_zombie_craftable_vox_category( "equip_dieseldrone_zm", "build_dd" );
+		make_zombie_craftable_open( "equip_dieseldrone_zm", "veh_t6_dlc_zm_quadrotor", ( 0, 0, 0 ), ( 0, -4, 10 ) );
+		add_zombie_craftable( "tomb_shield_zm", &"ZM_TOMB_CRRI", undefined, &"ZOMBIE_BOUGHT_RIOT", undefined, 1 );
+		add_zombie_craftable_vox_category( "tomb_shield_zm", "build_zs" );
+		make_zombie_craftable_open( "tomb_shield_zm", "t6_wpn_zmb_shield_dlc4_dmg0_world", vectorScale( ( 0, -1, 0 ), 90 ), ( 0, 0, level.riotshield_placement_zoffset ) );
+		add_zombie_craftable( "elemental_staff_fire", &"ZM_TOMB_CRF", &"ZM_TOMB_INS", &"ZM_TOMB_BOF", ::staff_fire_fullycrafted, 1 );
+		add_zombie_craftable_vox_category( "elemental_staff_fire", "fire_staff" );
+		add_zombie_craftable( "elemental_staff_air", &"ZM_TOMB_CRA", &"ZM_TOMB_INS", &"ZM_TOMB_BOA", ::staff_air_fullycrafted, 1 );
+		add_zombie_craftable_vox_category( "elemental_staff_air", "air_staff" );
+		add_zombie_craftable( "elemental_staff_lightning", &"ZM_TOMB_CRL", &"ZM_TOMB_INS", &"ZM_TOMB_BOL", ::staff_lightning_fullycrafted, 1 );
+		add_zombie_craftable_vox_category( "elemental_staff_lightning", "light_staff" );
+		add_zombie_craftable( "elemental_staff_water", &"ZM_TOMB_CRW", &"ZM_TOMB_INS", &"ZM_TOMB_BOW", ::staff_water_fullycrafted, 1 );
+		add_zombie_craftable_vox_category( "elemental_staff_water", "ice_staff" );
+		add_zombie_craftable( "gramophone", &"ZM_TOMB_CRAFT_GRAMOPHONE", &"ZM_TOMB_CRAFT_GRAMOPHONE", &"ZM_TOMB_BOUGHT_GRAMOPHONE", undefined, 0 );
+		add_zombie_craftable_vox_category( "gramophone", "gramophone" );
+	}
+	else
+	{
+		add_zombie_craftable( "tomb_shield_zm", &"ZM_TOMB_CRRI", undefined, &"ZOMBIE_BOUGHT_RIOT", undefined, 1 );
+		add_zombie_craftable_vox_category( "tomb_shield_zm", "build_zs" );
+		make_zombie_craftable_open( "tomb_shield_zm", "t6_wpn_zmb_shield_dlc4_dmg0_world", vectorScale( ( 0, -1, 0 ), 90 ), ( 0, 0, level.riotshield_placement_zoffset ) );
+	}
 	level.zombie_craftable_persistent_weapon = ::tomb_check_crafted_weapon_persistence;
 	level.custom_craftable_validation = ::tomb_custom_craftable_validation;
 	level.zombie_custom_equipment_setup = ::setup_quadrotor_purchase;
@@ -71,72 +80,11 @@ init_craftables() //checked changed to match cerberus output
 
 add_craftable_cheat( craftable ) //dev call skipped
 {
-	/*
-/#
-	if ( !isDefined( level.cheat_craftables ) )
-	{
-		level.cheat_craftables = [];
-	}
-	_a112 = craftable.a_piecestubs;
-	_k112 = getFirstArrayKey( _a112 );
-	while ( isDefined( _k112 ) )
-	{
-		s_piece = _a112[ _k112 ];
-		id_string = undefined;
-		client_field_val = undefined;
-		if ( isDefined( s_piece.client_field_id ) )
-		{
-			id_string = s_piece.client_field_id;
-			client_field_val = id_string;
-		}
-		else if ( isDefined( s_piece.client_field_state ) )
-		{
-			id_string = "gem";
-			client_field_val = s_piece.client_field_state;
-		}
-		else
-		{
-		}
-		tokens = strtok( id_string, "_" );
-		display_string = "piece";
-		_a134 = tokens;
-		_k134 = getFirstArrayKey( _a134 );
-		while ( isDefined( _k134 ) )
-		{
-			token = _a134[ _k134 ];
-			if ( token != "piece" && token != "staff" && token != "zm" )
-			{
-				display_string = ( display_string + "_" ) + token;
-			}
-			_k134 = getNextArrayKey( _a134, _k134 );
-		}
-		level.cheat_craftables[ "" + client_field_val ] = s_piece;
-		adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Craftables:1/" + craftable.name + "/" + display_string + "" "give_craftable " + client_field_val + ""\n" );
-		s_piece.waste = "waste";
-		_k112 = getNextArrayKey( _a112, _k112 );
-	}
-	flag_wait( "start_zombie_round_logic" );
-	_a149 = craftable.a_piecestubs;
-	_k149 = getFirstArrayKey( _a149 );
-	while ( isDefined( _k149 ) )
-	{
-		s_piece = _a149[ _k149 ];
-		s_piece craftable_waittill_spawned();
-		s_piece.piecespawn.model thread puzzle_debug_position( "C", vectorScale( ( 0, 0, 1 ), 255 ), undefined, "show_craftable_locations" );
-		_k149 = getNextArrayKey( _a149, _k149 );
-#/
-	}
-	*/
 }
 
 autocraft_staffs() //checked changed to match cerberus output
 {
 	setdvar( "autocraft_staffs", "off" );
-	/*
-/#
-	adddebugcommand( "devgui_cmd "Zombies/Tomb:1/Craftables:1/Give All Staff Pieces:0" "autocraft_staffs on"\n" );
-#/
-	*/
 	while ( getDvar( "autocraft_staffs" ) != "on" )
 	{
 		wait_network_frame();
@@ -174,27 +122,6 @@ autocraft_staffs() //checked changed to match cerberus output
 
 run_craftables_devgui() //dev call skipped
 {
-	/*
-/#
-	level thread autocraft_staffs();
-	setdvar( "give_craftable", "" );
-	while ( 1 )
-	{
-		craftable_id = getDvar( "give_craftable" );
-		if ( craftable_id != "" )
-		{
-			piece_spawn = level.cheat_craftables[ craftable_id ].piecespawn;
-			if ( isDefined( piece_spawn ) )
-			{
-				players = getplayers();
-				players[ 0 ] maps/mp/zombies/_zm_craftables::player_take_piece( piece_spawn );
-			}
-			setdvar( "give_craftable", "" );
-		}
-		wait 0,05;
-#/
-	}
-	*/
 }
 
 include_craftables() //checked matches cerberus output
@@ -627,7 +554,10 @@ clear_player_crystal( n_element ) //checked matches cerberus output
 	if ( n_element == self.crystal_id )
 	{
 		n_player = self getentitynumber() + 1;
-		level setclientfield( "staff_player" + n_player, 0 );
+		if ( n_player <= 4 )
+		{
+			level setclientfield( "staff_player" + n_player, 0 );
+		}
 		self.crystal_id = 0;
 	}
 }
@@ -660,14 +590,6 @@ onpickup_common( player ) //checked changed to match cerberus output
 	player playsound( "zmb_craftable_pickup" );
 	self.piece_owner = player;
 	self thread piece_pickup_conversation( player );
-	/*
-/#
-	foreach ( spawn in self.spawns )
-	{
-		spawn notify( "stop_debug_position" );
-#/
-	}
-	*/
 }
 
 staff_pickup_vo() //checked matches cerberus output
@@ -708,7 +630,10 @@ onpickup_crystal( player, elementname, elementenum ) //checked matches cerberus 
 	onpickup_common( player );
 	level setclientfield( "piece_staff_zm_gem_" + elementname, 1 );
 	n_player = player getentitynumber() + 1;
-	level setclientfield( "staff_player" + n_player, elementenum );
+	if ( n_player <= 4 )
+	{
+		level setclientfield( "staff_player" + n_player, elementenum );
+	}
 	if ( flag( "any_crystal_picked_up" ) )
 	{
 		self.piecestub.vox_id = undefined;
@@ -757,7 +682,7 @@ watch_part_pickup( str_quest_clientfield, n_clientfield_val ) //checked matches 
 	self craftable_waittill_spawned();
 	self.piecespawn waittill( "pickup" );
 	level notify( ( self.craftablename + "_" ) + self.piecename + "_picked_up" );
-	if ( isDefined( str_quest_clientfield ) && isDefined( n_clientfield_val ) )
+	if ( is_true( str_quest_clientfield ) )
 	{
 		level setclientfield( str_quest_clientfield, n_clientfield_val );
 	}
@@ -773,11 +698,6 @@ count_staff_piece_pickup( a_staff_pieces ) //checked changed to match cerberus o
 	level.staff_part_count[ str_name ] = a_staff_pieces.size;
 	foreach ( piece in a_staff_pieces )
 	{
-		/*
-/#
-		assert( piece.craftablename == str_name );
-#/
-		*/
 		piece thread watch_staff_pickup();
 	}
 }
@@ -1390,7 +1310,10 @@ set_player_staff( str_weaponname, e_player ) //checked matches cerberus output
 	s_staff.e_owner = e_player;
 	n_player = e_player getentitynumber() + 1;
 	e_player.staff_enum = s_staff.enum;
-	level setclientfield( "staff_player" + n_player, s_staff.enum );
+	if ( n_player <= 4 )
+	{
+		level setclientfield( "staff_player" + n_player, s_staff.enum );
+	}
 	e_player update_staff_accessories( s_staff.enum );
 	/*
 /#
@@ -1401,7 +1324,10 @@ set_player_staff( str_weaponname, e_player ) //checked matches cerberus output
 
 clear_player_staff_by_player_number( n_player ) //checked matches cerberus output
 {
-	level setclientfield( "staff_player" + n_player, 0 );
+	if ( n_player <= 4 )
+	{
+		level setclientfield( "staff_player" + n_player, 0 );
+	}
 }
 
 clear_player_staff( str_weaponname, e_owner ) //checked changed to match cerberus output
@@ -1421,7 +1347,10 @@ clear_player_staff( str_weaponname, e_owner ) //checked changed to match cerberu
 		{
 			n_player = e_owner getentitynumber() + 1;
 			e_owner.staff_enum = 0;
-			level setclientfield( "staff_player" + n_player, 0 );
+			if ( n_player <= 4 )
+			{
+				level setclientfield( "staff_player" + n_player, 0 );
+			}
 			e_owner update_staff_accessories( 0 );
 		}
 	}
@@ -1441,4 +1370,7 @@ hide_staff_model() //checked changed to match cerberus output
 		stave ghost();
 	}
 }
+
+
+
 

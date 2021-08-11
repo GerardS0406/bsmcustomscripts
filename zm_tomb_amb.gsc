@@ -575,7 +575,11 @@ sndmaelstrom() //checked matches cerberus output
 		if ( isplayer( who ) && !is_true( who.sndmaelstrom ) )
 		{
 			who.sndmaelstrom = 1;
-			level setclientfield( "sndMaelstromPlr" + who getentitynumber(), 1 );
+			triggerPlayer = who getentitynumber();
+			if ( triggerPlayer <= 3 )
+			{
+				level setclientfield( "sndMaelstromPlr" + triggerplayer, 1 );
+			}
 		}
 		who thread sndmaelstrom_timeout();
 		wait 0.1;
@@ -588,7 +592,11 @@ sndmaelstrom_timeout() //checked matches cerberus output
 	self endon( "sndMaelstrom_Timeout" );
 	wait 2;
 	self.sndmaelstrom = 0;
-	level setclientfield( "sndMaelstromPlr" + self getentitynumber(), 0 );
+	triggerPlayer = who getentitynumber();
+	if ( triggerPlayer <= 3 )
+	{
+		level setclientfield( "sndMaelstromPlr" + triggerplayer, 1 );
+	}
 }
 
 snd115egg() //checked changed to match cerberus output
@@ -665,5 +673,4 @@ snddelete115ent() //checked matches cerberus output
 	level waittill( "sndEnd115" );
 	self delete();
 }
-
 

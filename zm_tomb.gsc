@@ -227,6 +227,14 @@ main() //checked matches cerberus output
 	maps/mp/zombies/_zm_spawner::register_zombie_death_event_callback( ::tomb_zombie_death_event_callback );
 	level.player_intersection_tracker_override = ::tomb_player_intersection_tracker_override;
 	maps/mp/zm_tomb_challenges::challenges_init();
+	if(isdefined(level.customMap) && level.customMap != "vanilla")
+	{
+		machines = getentarray("random_perk_machine", "targetname");
+		foreach(machine in machines)
+		{
+			machine.origin = (0,0,-10000);
+		}
+	}
 	maps/mp/zombies/_zm_perk_random::init();
 	tomb_register_client_fields();
 	register_burn_overlay();
@@ -260,7 +268,8 @@ main() //checked matches cerberus output
 	level.n_crystals_pickedup = 0;
 	level thread maps/mp/zm_tomb_main_quest::main_quest_init();
 	level thread maps/mp/zm_tomb_teleporter::teleporter_init();
-	level thread maps/mp/zombies/_zm_perk_random::start_random_machine();
+	if(isdefined(level.customMap) && level.customMap == "vanilla")
+		level thread maps/mp/zombies/_zm_perk_random::start_random_machine();
 	level.closest_player_override = ::tomb_closest_player_override;
 	level.validate_enemy_path_length = ::tomb_validate_enemy_path_length;
 	level thread maps/mp/zm_tomb_ee_main::init();
@@ -311,6 +320,63 @@ main() //checked matches cerberus output
 	*/
 	init_weather_manager();
 	level thread maps/mp/zm_tomb_ffotd::main_end();
+	if ( isDefined ( level.customMap ) && level.customMap != "vanilla" )
+	{
+		level.oneInchPunchGiveFunc = maps/mp/zombies/_zm_weap_one_inch_punch::one_inch_punch_melee_attack;
+		thread turn_on_power();
+		thread disable_doors_trenches();
+		thread add_staff_to_box();
+		if(GetDvarIntDefault("useBossZombies", 1))
+		{
+			flag_set("activate_zone_nml");
+		}
+	}
+}
+
+turn_on_power()
+{
+	flag_wait("capture_zones_init_done" );
+	foreach(zone in level.zone_capture.zones)
+	{
+		zone.n_current_progress = 100;
+		zone maps/mp/zm_tomb_capture_zones::handle_generator_capture();
+		level setclientfield( zone.script_noteworthy, 100 / 100 );
+		level setclientfield( "state_" + zone.script_noteworthy, 2 );
+	}
+	wait 1;
+	flag_set("zone_capture_in_progress");
+}
+
+add_staff_to_box()
+{
+	level endon("end_game");
+	while(1)
+	{
+		level waittill("between_round_over");
+		if(level.round_number == 10)
+		{
+			level.zombie_weapons[ "staff_air_zm" ].is_in_box = 1;
+			level.limited_weapons["staff_air_zm"] = 1;
+			level.zombie_weapons[ "staff_lightning_zm" ].is_in_box = 1;
+			level.limited_weapons["staff_lightning_zm"] = 1;
+			level.zombie_weapons[ "staff_fire_zm" ].is_in_box = 1;
+			level.limited_weapons["staff_fire_zm"] = 1;
+			level.zombie_weapons[ "staff_water_zm" ].is_in_box = 1;
+			level.limited_weapons["staff_water_zm"] = 1;
+			break;
+		}
+	}
+}
+
+disable_doors_trenches()
+{
+	flag_wait( "initial_blackscreen_passed" );
+	zm_doors = getentarray( "zombie_door", "targetname" );
+	for(i=0;i<zm_doors.size;i++)
+	{
+		if(zm_doors[i].origin == (-732, 2240, -64))
+			zm_doors[i].origin = (0,0,-10000);
+	}
 }
 
 tomb_register_client_fields() //checked matches cerberus output
@@ -804,7 +870,7 @@ assign_lowest_unused_character_index() //checked changed to match cerberus outpu
 		{
 			if ( n_characters_defined == ( players.size - 1 ) )
 			{
-				if ( !is_true( level.has_richtofen ) )
+				if ( isDefined( level.has_richtofen ) && !level.has_richtofen )
 				{
 					level.has_richtofen = 1;
 					return 2;
@@ -1065,15 +1131,15 @@ custom_add_weapons() //checked matches cerberus output
 		add_zombie_weapon( "raygun_mark2_zm", "raygun_mark2_upgraded_zm", &"ZOMBIE_WEAPON_RAYGUN_MARK2", 10000, "wpck_raymk2", "", undefined );
 	}
 	add_zombie_weapon( "sticky_grenade_zm", undefined, &"ZOMBIE_WEAPON_STICKY_GRENADE", 250, "wpck_explo", "", 250 );
-	add_zombie_weapon( "staff_air_zm", undefined, &"AIR_STAFF", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_air_upgraded_zm", undefined, &"AIR_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_fire_zm", undefined, &"FIRE_STAFF", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_fire_upgraded_zm", undefined, &"FIRE_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_lightning_zm", undefined, &"LIGHTNING_STAFF", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_lightning_upgraded_zm", undefined, &"LIGHTNING_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_water_zm", undefined, &"WATER_STAFF", 50, "wpck_rpg", "", undefined, 1 );
+	add_zombie_weapon( "staff_air_zm", "staff_air_upgraded_zm", &"AIR_STAFF", 50, "wpck_rpg", "", undefined, 1 );
+	//add_zombie_weapon( "staff_air_upgraded_zm", undefined, &"AIR_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
+	add_zombie_weapon( "staff_fire_zm", "staff_fire_upgraded_zm", &"FIRE_STAFF", 50, "wpck_rpg", "", undefined, 1 );
+	//add_zombie_weapon( "staff_fire_upgraded_zm", undefined, &"FIRE_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
+	add_zombie_weapon( "staff_lightning_zm", "staff_lightning_upgraded_zm", &"LIGHTNING_STAFF", 50, "wpck_rpg", "", undefined, 1 );
+	//add_zombie_weapon( "staff_lightning_upgraded_zm", undefined, &"LIGHTNING_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
+	add_zombie_weapon( "staff_water_zm", "staff_water_upgraded_zm", &"WATER_STAFF", 50, "wpck_rpg", "", undefined, 1 );
 	add_zombie_weapon( "staff_water_zm_cheap", undefined, &"WATER_STAFF", 50, "wpck_rpg", "", undefined, 1 );
-	add_zombie_weapon( "staff_water_upgraded_zm", undefined, &"WATER_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
+	//add_zombie_weapon( "staff_water_upgraded_zm", undefined, &"WATER_STAFF_CHARGED", 50, "wpck_rpg", "", undefined, 1 );
 	add_zombie_weapon( "staff_revive_zm", undefined, &"ZM_TOMB_WEAP_STAFF_REVIVE", 50, "wpck_rpg", "", undefined, 1 );
 	change_weapon_cost( "mp40_zm", 1300 );
 	level.weapons_using_ammo_sharing = 1;
@@ -1692,6 +1758,34 @@ tomb_special_weapon_magicbox_check( weapon ) //checked matches cerberus output
 			return 0;
 		}
 	}
+	if( weapon == "staff_water_zm")
+	{
+		if( self has_weapon_or_upgrade( "staff_air_zm") || self has_weapon_or_upgrade( "staff_fire_zm") || self has_weapon_or_upgrade( "staff_lightning_zm") )
+		{
+			return 0;
+		}
+	}
+	if( weapon == "staff_air_zm")
+	{
+		if( self has_weapon_or_upgrade( "staff_water_zm") || self has_weapon_or_upgrade( "staff_fire_zm") || self has_weapon_or_upgrade( "staff_lightning_zm") )
+		{
+			return 0;
+		}
+	}
+	if( weapon == "staff_fire_zm")
+	{
+		if( self has_weapon_or_upgrade( "staff_air_zm") || self has_weapon_or_upgrade( "staff_water_zm") || self has_weapon_or_upgrade( "staff_lightning_zm") )
+		{
+			return 0;
+		}
+	}
+	if( weapon == "staff_lightning_zm")
+	{
+		if( self has_weapon_or_upgrade( "staff_air_zm") || self has_weapon_or_upgrade( "staff_fire_zm") || self has_weapon_or_upgrade( "staff_water_zm") )
+		{
+			return 0;
+		}
+	}
 	if ( isDefined( level.zombie_weapons[ weapon ].shared_ammo_weapon ) )
 	{
 		if ( self has_weapon_or_upgrade( level.zombie_weapons[ weapon ].shared_ammo_weapon ) )
@@ -2232,4 +2326,3 @@ tomb_can_track_ammo_custom( weap )
 	}
 	return 1;
 }
-
