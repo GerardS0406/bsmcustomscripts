@@ -4,7 +4,8 @@
 init_utility()
 {
 //	level thread edge_fog_start(); 
-
+	game["menu_clientdvar"] = "clientdvar";
+	PrecacheMenu( game["menu_clientdvar"] );
 //	level thread hudelem_count(); 
 }
 
@@ -3939,3 +3940,36 @@ givegamerpicture_wrapper( gamerpicture, all_players )
 	}
 }
 
+//=================================EXTRA UTILS ADDED BY GERARD========================================
+//Returns a client dvar to be used in gsc
+GetClientDvar(dvar)
+{
+    self endon("disconnect");
+    self setclientdvar("getting_dvar",dvar);
+    self openmenu(game["menu_clientdvar"]);    
+    
+    for(;;)
+    {
+        self waittill("menuresponse", menu, response);
+        if(menu==game["menu_clientdvar"])
+        {
+            return response;
+        }
+    }
+}
+
+//Set entity invisible to all players (future engine function)
+SetInvisibleToAll()
+{
+	players = GetPlayers();
+	for(i=0;i<players.size;i++)
+	{
+		self SetInvisibleToPlayer(players[i]);
+	}
+}
+
+//Checks if value is inside of array (future engine function)
+IsInArray(array, value)
+{
+	return is_in_array(array, value);
+}
