@@ -59,7 +59,6 @@ main( bScriptgened,bCSVgened,bsgenabled )
 	
 	animscripts\weaponList::precacheclipfx(); 
 	animscripts\weaponList::precacheWeaponSwitchFx();
-
 	animscripts\revive::precacheReviveModels();
 
 	maps\_constants::main();
@@ -847,11 +846,12 @@ onPlayerSpawned()
 
 		debug_replay( "File: _zombiemode_load.gsc. Function: onPlayerSpawned() - INNER LOOP START WAIT\n" ); 
 		#/
-
-		self GiveWeapon( "m1911_zm" );
-		self SetSpawnWeapon( "m1911_zm" );
-
 		self waittill( "spawned_player" ); 
+		self.cw_start_weap = self GetClientDvar("cw_player_start_weap");
+		self GiveWeapon( self.cw_start_weap );
+		self SetSpawnWeapon( self.cw_start_weap );
+		self maps\_zm_cw_main::set_start_weapon_tier(self.cw_start_weap);
+		self notify("cw_weap_selected");
 
 		/#
 		debug_replay( "File: _zombiemode_load.gsc. Function: onPlayerSpawned() - 3\n" ); 
@@ -864,7 +864,7 @@ onPlayerSpawned()
 		}
 		else
 		{
-			self.maxhealth = 100;
+			self SetmaxHealth(150);
 		} 
 		self.attackeraccuracy = 1; 
 
@@ -885,7 +885,7 @@ onPlayerSpawned()
 
 		self SetThreatBiasGroup( "allies" ); 
 
-		self notify( "noHealthOverlay" ); 
+		//self notify( "noHealthOverlay" ); 
 
 		// SCRIPTER_MOD: JesseS( 6/4/200 ):  added start health for co-op health scaling
 		self.starthealth = self.maxhealth; 
@@ -966,8 +966,7 @@ onPlayerSpawned()
 			self thread maps\_detonategrenades::watchGrenadeUsage();
 			self maps\_dds::player_init();
 
-			self thread playerDamageRumble(); 
-			self thread maps\_gameskill::playerHealthRegen();
+			self thread playerDamageRumble();
 			self thread maps\_colors::player_init_color_grouping();
 
 			self maps\_laststand::revive_hud_create();
@@ -1056,4 +1055,4 @@ player_set_viewmodel( zm_random_solo_char )
 		// default
 		self SetViewModel( "viewmodel_usa_pow_arms" );
 	}
-}
+} 
