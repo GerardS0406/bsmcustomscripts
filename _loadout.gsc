@@ -566,7 +566,6 @@ init_models_and_variables_loadout()
 		if ( !isDefined(level.zombietron_mode) )
 		{
 			add_weapon( "knife_zm" );
-			add_weapon( "m1911_zm" );
 			PrecacheItem( "bowie_knife_zm" );
 			//set_switch_weapon( "m1911_zm" );
 			set_laststand_pistol( "m1911_zm" );
@@ -1043,3 +1042,4 @@ give_model( class )
 //	
 //	return true;
 //}
+ 
