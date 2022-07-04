@@ -94,16 +94,25 @@ main()
 
 	// Initialize the zone manager above any scripts that make use of zone info
 	maps\_zombiemode_zone_manager::init();
+	maps\_zm_unitrigger::uni_init();
 
 	// Call the other zombiemode scripts
 	maps\_zombiemode_audio::audio_init();
 	maps\_zombiemode_claymore::init();
 	maps\_zombiemode_weapons::init();
+	maps\_zombiemode_magicbox::init_chest();
 	maps\_zombiemode_equipment::init();
 	maps\_zombiemode_blockers::init();
 	maps\_zombiemode_spawner::init();
+	maps\_zombiemode_playerhealth::init();
 	maps\_zombiemode_powerups::init();
+	//maps\_zombiemode_perks::init();
+	maps\_zm_cw_hud::hud_init();
+	maps\_zm_cw_main::cw_main();
+	maps\_zm_fieldupgrades::init();
 	maps\_zombiemode_perks::init();
+	maps\_zm_cw_wunderfizz::wunderfizz_init();
+	maps\perks\_zm_packapunch::init();
 	maps\_zombiemode_user::init();
 	maps\_zombiemode_weap_cymbal_monkey::init();
 	maps\_zombiemode_weap_freezegun::init();
@@ -183,8 +192,14 @@ main()
 	init_screen_stats();
 	level thread update_screen_stats();
 	#/
-
+	level thread startunitriggers();
 	level thread maps\_zombiemode_ffotd::main_end();
+}
+
+startunitriggers()
+{
+	flag_wait( "all_players_connected");
+	level thread maps\_zm_unitrigger::main();
 }
 
 post_all_players_connected()
@@ -2079,7 +2094,7 @@ laststand_giveback_player_perks()
 				continue;
 			}
 			
-			maps\_zombiemode_perks::give_perk( self.laststand_perks[i] );
+			//maps\_zombiemode_perks::give_perk( self.laststand_perks[i] );
 		}
 	}
 }
@@ -3507,7 +3522,6 @@ round_start()
 // 	{
 // 		level.chalk_hud1 SetShader( "hud_chalk_5", 64, 64 );
 // 	}
-	level.chalk_hud2 = create_chalk_hud( 64 );
 
 	//	level waittill( "introscreen_done" );
 
@@ -3559,11 +3573,11 @@ create_chalk_hud( x )
 	hud.alignY = "bottom";
 	hud.horzAlign = "user_left"; 
 	hud.vertAlign = "user_bottom";
-	hud.color = ( 0.21, 0, 0 );
+	hud.color = ( 0.8, 0, 0 );
 	hud.x = x; 
 	hud.y = -4; 
 	hud.alpha = 0;
-	hud.fontscale = 32.0;
+	hud.fontscale = 24;
 
 	hud SetShader( "hud_chalk_1", 64, 64 );
 
@@ -3642,39 +3656,22 @@ chalk_one_up()
 {
 	huds = [];
 	huds[0] = level.chalk_hud1;
-	huds[1] = level.chalk_hud2;
 
 	// Hud1 shader
 	if( level.round_number >= 1 && level.round_number <= 5 )
 	{
 		huds[0] SetShader( "hud_chalk_" + level.round_number, 64, 64 );
 	}
-	else if ( level.round_number >= 5 && level.round_number <= 10 )
-	{
-		huds[0] SetShader( "hud_chalk_5", 64, 64 );
-	}
-
-	// Hud2 shader
-	if( level.round_number > 5 && level.round_number <= 10 )
-	{
-		huds[1] SetShader( "hud_chalk_" + ( level.round_number - 5 ), 64, 64 );
-	}
 
 	// Display value
 	if ( IsDefined( level.chalk_override ) )
 	{
 		huds[0] SetText( level.chalk_override );
-		huds[1] SetText( " " );
 	}
-	else if( level.round_number <= 5 )
-	{
-		huds[1] SetText( " " );
-	}
-	else if( level.round_number > 10 )
+	else if( level.round_number > 5 )
 	{
 		huds[0].fontscale = 32;
 		huds[0] SetValue( level.round_number );
-		huds[1] SetText( " " );
 	}
 
 	if(!IsDefined(level.doground_nomusic))
@@ -3729,8 +3726,6 @@ chalk_one_up()
 		huds[0].x = -5;
 		huds[0].y = -200;
 
-		huds[1] SetText( " " );
-
 		// Fade in white
 		round FadeOverTime( 1 );
 		round.alpha = 1;
@@ -3783,9 +3778,13 @@ chalk_one_up()
 
 		level notify( "intro_hud_done" );
 		huds[0] MoveOverTime( 1.75 );
-		huds[0].horzAlign = "user_left";
+		huds[0].horzAlign = "user_right";
+		huds[0].vertAlign = "user_top";
+		huds[0].alignX = "right"; 
+		huds[0].alignY = "top";
+		huds[0].x = -10;
 		//		huds[0].x = 0;
-		huds[0].y = -4;
+		huds[0].y = 5;
 		wait( 2 );
 
 		round destroy_hud();
@@ -3826,12 +3825,6 @@ chalk_round_over()
 {
 	huds = [];
 	huds[huds.size] = level.chalk_hud1;
-	huds[huds.size] = level.chalk_hud2;
-
-	if( level.round_number <= 5 || level.round_number > 10 )
-	{
-		level.chalk_hud2 SetText( " " );
-	}
 
 	time = level.zombie_vars["zombie_between_round_time"];
 	if ( time > 3 )
@@ -3889,7 +3882,7 @@ chalk_round_over()
 
 		huds[i] FadeOverTime( time * 0.25 );
 		//		huds[i].color = ( 0.8, 0, 0 );
-		huds[i].color = ( 0.21, 0, 0 );
+		huds[i].color = ( 0.8, 0, 0 );
 		huds[i].alpha = 0;
 	}
 
@@ -4601,6 +4594,45 @@ player_damage_override( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, 
 			else if ( isdefined( eAttacker.meleeDamage ) )
 			{
 				iDamage = eAttacker.meleeDamage;
+				if(is_true(level.round_number <= 10))
+					iDamage = Int(iDamage * 0.5);
+				else if(is_true(level.round_number <= 30))
+					iDamage = Int((iDamage * 5)/6);
+				else if(is_true(level.round_number <= 50))
+					iDamage = Int(iDamage * 1.25);
+				else
+					iDamage = Int(iDamage * 1.5);
+				if(is_true(self.hasArmor >= 1) && is_true(self.armorHealth > 0))
+				{
+					iDamage = Int(iDamage / 1.6);
+					if(is_true(self.frenzied_guard_activated))
+					{
+						iDamage = 0;
+					}
+					if(iDamage >= self.health && self maps\_zombiemode_perks::has_perk_tier("juggernog",5))
+					{
+						//PlaySound Armor Destroyed
+						self.armorHealth = 0;
+						return(self.health - 1);
+					}
+					if(self maps\_zombiemode_perks::has_perk_tier("juggernog",4))
+					{
+						self.armorHealth -= 3;
+					}
+					else
+					{
+						self.armorHealth -= 4;
+					}
+					if(self.armorHealth <= 0)
+					{
+						//PlaySound Armor Destroyed
+						self.armorHealth = 0;
+					}
+				}
+				if(is_true(self.frenzied_guard_activated))
+				{
+					//eAttacker explodeZambie();
+				}
 			}
 			else
 			{
@@ -4796,7 +4828,7 @@ check_player_damage_callbacks( eInflictor, eAttacker, iDamage, iDFlags, sMeansOf
 		newDamage = self [[ level.player_damage_callbacks[i] ]]( eInflictor, eAttacker, iDamage, iDFlags, sMeansOfDeath, sWeapon, vPoint, vDir, sHitLoc, modelIndex, psOffsetTime );
 		if ( -1 != newDamage )
 		{
-			return newDamage;
+			iDamage = newDamage;
 		}
 	}
 
@@ -4864,6 +4896,7 @@ wait_and_revive()
 //
 actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, sHitLoc, modelIndex, psOffsetTime )
 {
+
 	// WW (8/14/10) - define the owner of the monkey shot
 	if( weapon == "crossbow_explosive_upgraded_zm" && meansofdeath == "MOD_IMPACT" ) 
 	{
@@ -4946,6 +4979,8 @@ actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon,
 		final_damage = int( final_damage * 1.5 );
 	}
 
+	final_damage = self check_actor_damage_callbacks( inflictor, attacker, final_damage, flags, meansofdeath, weapon, vpoint, vdir, sHitLoc, modelIndex, psOffsetTime );
+
 	if ( is_true( self.in_water ) )
 	{
 		if ( int( final_damage ) >= self.health )
@@ -4957,6 +4992,28 @@ actor_damage_override( inflictor, attacker, damage, flags, meansofdeath, weapon,
 	// return unchanged damage
 	//iPrintln( final_damage );
 	return int( final_damage );
+}
+
+check_actor_damage_callbacks( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, sHitLoc, modelIndex, psOffsetTime )
+{
+	if(!isdefined(level.actor_damage_callbacks))
+		return damage;
+
+	for ( i = 0; i < level.actor_damage_callbacks.size; i++ )
+	{
+		newDamage = self [[ level.actor_damage_callbacks[i] ]]( inflictor, attacker, damage, flags, meansofdeath, weapon, vpoint, vdir, sHitLoc, modelIndex, psOffsetTime );
+		if ( -1 != newDamage )
+			damage = newDamage;
+	}
+	return damage;
+}
+
+register_actor_damage_callback( func )
+{
+	if ( !isdefined( level.actor_damage_callbacks ) )
+		level.actor_damage_callbacks = [];
+
+	level.actor_damage_callbacks[level.actor_damage_callbacks.size] = func;
 }
 
 is_headshot( sWeapon, sHitLoc, sMeansOfDeath )
@@ -6569,3 +6626,4 @@ set_sidequest_completed(id)
 }
 
 
+ 
